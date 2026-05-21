@@ -25,11 +25,17 @@ async function startServer() {
 
   app.post("/api/create-checkout-session", async (req, res) => {
     try {
-      const stripe = getStripe();
-      const { items } = req.body;
-      
+      const { items, orderId } = req.body;
       const origin = process.env.APP_URL || req.headers.origin || `http://localhost:${PORT}`;
 
+      if (!process.env.STRIPE_SECRET_KEY) {
+        // Fallback for preview environments without Stripe configured
+        console.log("STRIPE_SECRET_KEY not found. Using mock checkout.");
+        return res.json({ id: "mock_session", url: `${origin}?success=true&order_id=${orderId || ''}` });
+      }
+
+      const stripe = getStripe();
+      
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: items.map((item: any) => ({
@@ -44,7 +50,7 @@ async function startServer() {
           quantity: item.quantity,
         })),
         mode: "payment",
-        success_url: `${origin}?success=true`,
+        success_url: `${origin}?success=true&order_id=${orderId || ''}`,
         cancel_url: `${origin}?canceled=true`,
       });
 

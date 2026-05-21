@@ -1,9 +1,9 @@
 import React from 'react';
 import { useStore } from '../StoreContext';
-import { ShoppingCart, LogIn, LogOut, Settings, Leaf } from 'lucide-react';
+import { ShoppingCart, LogIn, LogOut, Settings, Leaf, User } from 'lucide-react';
 
 export function Header({ view, setView }: { view: string, setView: (v: any) => void }) {
-  const { cart, language, setLanguage, t, isAdmin, logoutAdmin } = useStore();
+  const { cart, language, setLanguage, t, isAdmin, logoutAdmin, currentUser, loginCustomer, logoutCustomer } = useStore();
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
@@ -41,8 +41,32 @@ export function Header({ view, setView }: { view: string, setView: (v: any) => v
               )}
             </button>
 
+            {currentUser ? (
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <span className="hidden md:block text-sm font-medium opacity-90 truncate max-w-[120px]">
+                  {currentUser.displayName || currentUser.email}
+                </span>
+                <button 
+                  onClick={() => logoutCustomer()}
+                  className="p-2 hover:bg-[#447A3C] rounded-full transition-colors text-red-200 hover:text-red-100"
+                  title="Logout"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={() => loginCustomer()}
+                className="text-sm font-medium opacity-80 hover:opacity-100 flex items-center gap-1.5 p-2 bg-[#3A6B34] hover:bg-[#447A3C] rounded-lg transition-colors border border-[#447A3C]"
+                title="Sign in with Google"
+              >
+                <User className="w-4 h-4" />
+                <span className="hidden sm:inline">Sign In</span>
+              </button>
+            )}
+
             {isAdmin ? (
-              <div className="flex items-center space-x-1 sm:space-x-3">
+              <div className="flex items-center space-x-1 sm:space-x-3 border-l border-[#447A3C] pl-2 sm:pl-4">
                 <button 
                   onClick={() => setView('admin')}
                   className={`p-2 rounded-full transition-colors ${view === 'admin' ? 'bg-[#558B4D]' : 'hover:bg-[#447A3C]'}`}
@@ -61,10 +85,10 @@ export function Header({ view, setView }: { view: string, setView: (v: any) => v
             ) : (
               <button 
                 onClick={() => setView('login')}
-                className="text-sm font-medium opacity-80 hover:opacity-100 flex items-center gap-1 p-2"
+                className="text-xs font-medium opacity-70 hover:opacity-100 p-2 border-l border-[#447A3C] pl-2 sm:pl-4"
                 title={t('admin_login')}
               >
-                <span>Admin Login</span>
+                Admin
               </button>
             )}
           </div>

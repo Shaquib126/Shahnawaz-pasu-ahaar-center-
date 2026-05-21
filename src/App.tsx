@@ -5,25 +5,31 @@ import { Shop } from './components/Shop';
 import { Cart } from './components/Cart';
 import { AdminPanel } from './components/AdminPanel';
 import { Login } from './components/Login';
+import { CookieConsent } from './components/CookieConsent';
 
 type View = 'shop' | 'cart' | 'admin' | 'login';
 
 function MainApp() {
   const [view, setView] = useState<View>('shop');
-  const { isAdmin, clearCart } = useStore();
+  const { isAdmin, clearCart, updateOrderStatus } = useStore();
 
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
+    const orderId = query.get('order_id');
+    
     if (query.get('success')) {
       clearCart();
+      if (orderId) {
+        updateOrderStatus(orderId, 'Processing');
+      }
       alert('Payment successful! Your order has been placed.');
       window.history.replaceState({}, document.title, window.location.pathname);
     }
     if (query.get('canceled')) {
-      alert('Payment canceled.');
+      alert('Payment canceled. You can try checking out again.');
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [clearCart]);
+  }, [clearCart, updateOrderStatus]);
 
   return (
     <div className="min-h-screen bg-[#F4F7F2] text-[#2C3E2D] font-sans flex flex-col">
@@ -35,6 +41,7 @@ function MainApp() {
         {view === 'admin' && !isAdmin && <Login setView={setView} />}
         {view === 'login' && <Login setView={setView} />}
       </main>
+      <CookieConsent />
     </div>
   );
 }

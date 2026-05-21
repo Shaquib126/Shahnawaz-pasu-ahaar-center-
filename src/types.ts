@@ -15,3 +15,18 @@ export interface CartItem {
   productId: string;
   quantity: number;
 }
+
+export interface CustomerInfo {
+  name: string;
+  phone: string;
+  address: string;
+}
+
+export interface Order {
+  id: string;
+  items: CartItem[];
+  customerInfo: CustomerInfo;
+  totalAmount: number;
+  date: string;
+  status: 'Pending Payment' | 'Processing' | 'Delivered';
+}

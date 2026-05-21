@@ -28,7 +28,18 @@ export const translations = {
     actions: "Actions",
     empty_cart: "Your cart is empty",
     close: "Close",
-    shop: "Shop"
+    shop: "Shop",
+    delivery_details: "Delivery Details",
+    full_name: "Full Name",
+    phone_number: "Phone Number",
+    delivery_address: "Full Address",
+    proceed_to_pay: "Proceed to Pay",
+    orders: "Orders",
+    products: "Products",
+    status: "Status",
+    date: "Date",
+    mark_delivered: "Mark Delivered",
+    customer: "Customer"
   },
   hi: {
     shop_title: "शाहनवाज़ पशु आहार केंद्र",
@@ -59,7 +70,18 @@ export const translations = {
     actions: "क्रियाएँ",
     empty_cart: "आपका कार्ट खाली है",
     close: "बंद करें",
-    shop: "दुकान"
+    shop: "दुकान",
+    delivery_details: "वितरण विवरण",
+    full_name: "पूरा नाम",
+    phone_number: "फ़ोन नंबर",
+    delivery_address: "पूरा पता",
+    proceed_to_pay: "भुगतान के लिए आगे बढ़ें",
+    orders: "ऑर्डर",
+    products: "उत्पाद",
+    status: "स्थिति",
+    date: "तारीख",
+    mark_delivered: "वितरित चिह्नित करें",
+    customer: "ग्राहक"
   }
 };
 

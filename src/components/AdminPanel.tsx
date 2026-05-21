@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../StoreContext';
 import { Category } from '../types';
-import { Plus, Trash2, ShieldCheck, X, Edit2 } from 'lucide-react';
+import { Plus, Trash2, ShieldCheck, X, Edit2, Package, ListChecks, CheckCircle2, Mail, RefreshCw } from 'lucide-react';
+import { initAuth, googleSignIn, logout, getAccessToken } from '../auth';
 
 export function AdminPanel() {
-  const { products, addProduct, updateProduct, deleteProduct, t } = useStore();
+  const { products, orders, addProduct, updateProduct, deleteProduct, updateOrderStatus, t } = useStore();
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'gmail'>('products');
+  
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -54,6 +57,67 @@ export function AdminPanel() {
     setIsFormOpen(true);
   };
 
+  const [user, setUser] = useState<any>(null);
+  const [emails, setEmails] = useState<any[]>([]);
+  const [isLoadingEmails, setIsLoadingEmails] = useState(false);
+
+  useEffect(() => {
+    initAuth(
+      (u) => setUser(u),
+      () => setUser(null)
+    );
+  }, []);
+
+  const handleGoogleLogin = async () => {
+    try {
+      const res = await googleSignIn(true);
+      if (res) setUser(res.user);
+    } catch (err: any) {
+      if (err.code === 'auth/popup-closed-by-user') {
+        alert("Sign-in popup was closed. Please try again. If you are in a preview window, try opening the app in a new tab.");
+      } else {
+        alert("Failed to login with Google");
+      }
+    }
+  };
+
+  const handleFetchEmails = async () => {
+    const token = await getAccessToken();
+    if (!token) return;
+
+    setIsLoadingEmails(true);
+    try {
+      const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=5&q=is:unread', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      
+      if (data.messages && data.messages.length > 0) {
+        const emailDetails = await Promise.all(
+          data.messages.map(async (msg: any) => {
+            const msgRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            return await msgRes.json();
+          })
+        );
+        setEmails(emailDetails);
+      } else {
+        setEmails([]);
+      }
+    } catch (err) {
+      alert("Failed to sync emails.");
+    } finally {
+      setIsLoadingEmails(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    setUser(null);
+    setEmails([]);
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in pb-16">
       <div className="flex items-center justify-between mb-8">
@@ -63,22 +127,56 @@ export function AdminPanel() {
           </div>
           <h1 className="text-3xl font-bold text-gray-900">{t('admin_panel')}</h1>
         </div>
-        <button
-          onClick={() => {
-            setIsFormOpen(!isFormOpen);
-            if (isFormOpen) {
-              setEditingId(null);
-              setFormData({ name: '', category: 'Feed', description: '', price: '', stock: '', imageUrl: '' });
-            }
-          }}
-          className="bg-[#2D5A27] hover:bg-[#23471E] text-white font-medium px-5 py-2.5 rounded-lg transition-all flex items-center space-x-2 shadow-sm hover:shadow active:scale-95"
+        
+        {activeTab === 'products' && (
+          <button
+            onClick={() => {
+              setIsFormOpen(!isFormOpen);
+              if (isFormOpen) {
+                setEditingId(null);
+                setFormData({ name: '', category: 'Feed', description: '', price: '', stock: '', imageUrl: '' });
+              }
+            }}
+            className="bg-[#2D5A27] hover:bg-[#23471E] text-white font-medium px-5 py-2.5 rounded-lg transition-all flex items-center space-x-2 shadow-sm hover:shadow active:scale-95"
+          >
+            {isFormOpen ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+            <span>{isFormOpen ? t('close') : t('add_product')}</span>
+          </button>
+        )}
+      </div>
+
+      <div className="flex space-x-4 border-b border-[#DCE4D8] mb-6 overflow-x-auto">
+        <button 
+          onClick={() => setActiveTab('products')}
+          className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'products' ? 'border-[#2D5A27] text-[#2D5A27]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
         >
-          {isFormOpen ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-          <span>{isFormOpen ? t('close') : t('add_product')}</span>
+          <Package className="w-5 h-5"/>
+          {t('products' as any)}
+        </button>
+        <button 
+          onClick={() => setActiveTab('orders')}
+          className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'orders' ? 'border-[#2D5A27] text-[#2D5A27]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+        >
+          <ListChecks className="w-5 h-5"/>
+          {t('orders' as any)}
+          {orders.filter(o => o.status === 'Processing').length > 0 && (
+            <span className="ml-1 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full leading-none">
+              {orders.filter(o => o.status === 'Processing').length}
+            </span>
+          )}
+        </button>
+        <button 
+          onClick={() => setActiveTab('gmail')}
+          className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'gmail' ? 'border-[#2D5A27] text-[#2D5A27]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+        >
+          <Mail className="w-5 h-5"/>
+          Gmail Sync
         </button>
       </div>
 
-      {isFormOpen && (
+      {activeTab === 'products' && (
+        <>
+          {isFormOpen && (
         <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-8 mb-8 animate-fade-in overflow-hidden relative">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-green-600"></div>
           <h2 className="text-xl font-bold text-gray-800 mb-6">{editingId ? t('edit' as any) : t('add_product')}</h2>
@@ -192,6 +290,148 @@ export function AdminPanel() {
           )}
         </div>
       </div>
+      </>
+      )}
+
+      {activeTab === 'orders' && (
+        <div className="bg-white rounded-2xl shadow-sm border border-[#E1E8DE] overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#F4F7F2] text-gray-500 text-xs uppercase tracking-wider">
+                  <th className="p-5 font-bold border-b border-[#E1E8DE]">Order ID</th>
+                  <th className="p-5 font-bold border-b border-[#E1E8DE]">{t('customer' as any)}</th>
+                  <th className="p-5 font-bold border-b border-[#E1E8DE]">Items</th>
+                  <th className="p-5 font-bold border-b border-[#E1E8DE]">{t('status' as any)}</th>
+                  <th className="p-5 font-bold border-b border-[#E1E8DE] text-right">{t('actions' as any)}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E1E8DE]">
+                {orders.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="p-16 text-center text-gray-500">
+                      No orders found.
+                    </td>
+                  </tr>
+                )}
+                {orders.map(order => (
+                  <tr key={order.id} className="hover:bg-[#F9FBF8] transition-colors">
+                    <td className="p-5">
+                      <div className="font-bold text-gray-900">#{order.id}</div>
+                      <div className="text-xs text-gray-500 mt-1">{new Date(order.date).toLocaleString()}</div>
+                    </td>
+                    <td className="p-5">
+                      <div className="font-bold text-gray-900">{order.customerInfo.name}</div>
+                      <div className="text-sm text-gray-600">{order.customerInfo.phone}</div>
+                      <div className="text-xs text-gray-500 mt-0.5 line-clamp-2 max-w-[200px]" title={order.customerInfo.address}>{order.customerInfo.address}</div>
+                    </td>
+                    <td className="p-5">
+                      <div className="text-sm text-gray-700 font-medium">
+                        {order.items.reduce((acc, item) => acc + item.quantity, 0)} items
+                      </div>
+                      <div className="font-bold text-[#2D5A27] mt-1">₹{order.totalAmount.toLocaleString()}</div>
+                    </td>
+                    <td className="p-5">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                        order.status === 'Processing' ? 'bg-yellow-100 text-yellow-800' :
+                        order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="p-5 text-right whitespace-nowrap">
+                      {order.status === 'Processing' && (
+                        <button 
+                          onClick={() => updateOrderStatus(order.id, 'Delivered')}
+                          className="bg-[#2D5A27] hover:bg-[#23471E] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm"
+                        >
+                          {t('mark_delivered' as any)}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'gmail' && (
+        <div className="bg-white rounded-2xl shadow-sm border border-[#E1E8DE] p-8">
+          <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-100">
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">Gmail Integration</h2>
+              <p className="text-sm text-gray-500 mt-1">Connect your Gmail to send order updates and view unread messages.</p>
+            </div>
+            {user && (
+              <button onClick={handleLogout} className="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors">
+                Disconnect
+              </button>
+            )}
+          </div>
+
+          {!user ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="bg-blue-50 p-4 rounded-full mb-6">
+                <Mail className="w-10 h-10 text-blue-500" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Connect Google Workspace</h3>
+              <p className="text-sm text-gray-500 text-center max-w-md mb-8">Authenticate securely to sync your emails and allow the store to send automated order status updates.</p>
+              
+              <button onClick={handleGoogleLogin} className="flex items-center space-x-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-6 py-3 rounded-lg shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-gray-200">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-5 h-5">
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                  <path fill="none" d="M0 0h48v48H0z"></path>
+                </svg>
+                <span>Sign in with Google</span>
+              </button>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">Connected account</div>
+                  <div className="font-bold text-gray-900">{user.email}</div>
+                </div>
+                <button 
+                  onClick={handleFetchEmails}
+                  disabled={isLoadingEmails}
+                  className="flex items-center space-x-2 bg-[#F4F7F2] hover:bg-[#E1E8DE] text-[#2D5A27] px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoadingEmails ? 'animate-spin' : ''}`} />
+                  <span>Sync Unread</span>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {emails.length === 0 && !isLoadingEmails && (
+                  <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                    <p className="text-gray-500">No unread emails to display.</p>
+                  </div>
+                )}
+                
+                {emails.map(email => {
+                  const subjectHeader = email.payload.headers.find((h: any) => h.name === 'Subject');
+                  const fromHeader = email.payload.headers.find((h: any) => h.name === 'From');
+                  return (
+                    <div key={email.id} className="p-4 bg-white border border-gray-100 shadow-sm rounded-xl hover:border-blue-100 transition-colors">
+                      <div className="font-bold text-gray-900 mb-1">{subjectHeader ? subjectHeader.value : '(No Subject)'}</div>
+                      <div className="text-sm text-gray-500">{fromHeader ? fromHeader.value : 'Unknown Sender'}</div>
+                      <div className="text-xs text-gray-400 mt-2">{email.snippet}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
     </div>
   );
 }
