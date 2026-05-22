@@ -3,7 +3,7 @@ import { useStore } from '../StoreContext';
 import { ShoppingCart, LogIn, LogOut, Settings, Leaf, User } from 'lucide-react';
 
 export function Header({ view, setView }: { view: string, setView: (v: any) => void }) {
-  const { cart, language, setLanguage, t, isAdmin, logoutAdmin, currentUser, loginCustomer, logoutCustomer } = useStore();
+  const { cart, language, setLanguage, t, isAdmin, logoutAdmin, currentUser, loginCustomer, logoutCustomer, adminProfilePic } = useStore();
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
@@ -69,10 +69,14 @@ export function Header({ view, setView }: { view: string, setView: (v: any) => v
               <div className="flex items-center space-x-1 sm:space-x-3 border-l border-[#447A3C] pl-2 sm:pl-4">
                 <button 
                   onClick={() => setView('admin')}
-                  className={`p-2 rounded-full transition-colors ${view === 'admin' ? 'bg-[#558B4D]' : 'hover:bg-[#447A3C]'}`}
+                  className={`p-2 rounded-full transition-colors flex items-center justify-center ${view === 'admin' ? 'bg-[#558B4D]' : 'hover:bg-[#447A3C]'}`}
                   title={t('admin_panel')}
                 >
-                  <Settings className="h-5 w-5" />
+                  {adminProfilePic ? (
+                    <img src={adminProfilePic} alt="Admin" className="w-5 h-5 rounded-full object-cover" />
+                  ) : (
+                    <Settings className="h-5 w-5" />
+                  )}
                 </button>
                 <button 
                   onClick={() => { logoutAdmin(); setView('shop'); }}

@@ -12,6 +12,8 @@ interface StoreContextType {
   language: Language;
   isAdmin: boolean;
   currentUser: User | null;
+  adminProfilePic: string | null;
+  setAdminProfilePic: (pic: string | null) => void;
   t: (key: keyof typeof translations.en) => string;
   setLanguage: (lang: Language) => void;
   loginAdmin: (username: string) => boolean;
@@ -50,6 +52,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>('en');
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [adminProfilePic, setAdminProfilePic] = useState<string | null>(() => {
+    return localStorage.getItem('adminProfilePic');
+  });
+
+  useEffect(() => {
+    if (adminProfilePic) {
+      localStorage.setItem('adminProfilePic', adminProfilePic);
+    } else {
+      localStorage.removeItem('adminProfilePic');
+    }
+  }, [adminProfilePic]);
 
   useEffect(() => {
     const unsubscribe = initAuth((user) => {
@@ -168,8 +181,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <StoreContext.Provider value={{
-      products, cart, orders, language, isAdmin, currentUser, t,
-      setLanguage, loginAdmin, logoutAdmin, loginCustomer, logoutCustomer,
+      products, cart, orders, language, isAdmin, currentUser, adminProfilePic, t,
+      setAdminProfilePic, setLanguage, loginAdmin, logoutAdmin, loginCustomer, logoutCustomer,
       addToCart, removeFromCart, updateCartQuantity, clearCart,
       addProduct, updateProduct, deleteProduct,
       placeOrder, updateOrderStatus

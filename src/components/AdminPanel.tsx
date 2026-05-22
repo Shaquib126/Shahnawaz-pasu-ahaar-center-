@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../StoreContext';
 import { Category } from '../types';
-import { Plus, Trash2, ShieldCheck, X, Edit2, Package, ListChecks, CheckCircle2, Mail, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, ShieldCheck, X, Edit2, Package, ListChecks, CheckCircle2, Mail, RefreshCw, Camera } from 'lucide-react';
 import { initAuth, googleSignIn, logout, getAccessToken } from '../auth';
 
 export function AdminPanel() {
-  const { products, orders, addProduct, updateProduct, deleteProduct, updateOrderStatus, t } = useStore();
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'gmail'>('products');
+  const { products, orders, addProduct, updateProduct, deleteProduct, updateOrderStatus, adminProfilePic, setAdminProfilePic, t } = useStore();
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'workspace'>('products');
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -112,19 +112,116 @@ export function AdminPanel() {
     }
   };
 
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportOrdersToSheets = async () => {
+    const token = await getAccessToken();
+    if (!token) return;
+
+    if (!window.confirm(`Export ${orders.length} orders to a new Google Sheet?`)) return;
+
+    setIsExporting(true);
+    try {
+      // 1. Create a new Spreadsheet
+      const createRes = await fetch('https://sheets.googleapis.com/v4/spreadsheets', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          properties: {
+            title: `Orders Export ${new Date().toLocaleDateString()}`
+          }
+        })
+      });
+      const createData = await createRes.json();
+      
+      if (!createRes.ok) throw new Error(createData.error?.message || 'Failed to create spreadsheet');
+      
+      const spreadsheetId = createData.spreadsheetId;
+      const spreadsheetUrl = createData.spreadsheetUrl;
+
+      // 2. Prepare order data
+      const header = ["Order ID", "Date", "Customer Name", "Customer Phone", "Customer Address", "Total Amount", "Status", "Items (Qty)"];
+      const rows = orders.map(order => [
+        order.id,
+        new Date(order.date).toLocaleString(),
+        order.customerInfo.name,
+        order.customerInfo.phone,
+        order.customerInfo.address,
+        order.totalAmount,
+        order.status,
+        order.items.map(i => `${i.quantity}x ${products.find(p => p.id === i.productId)?.name || 'Unknown'}`).join(", ")
+      ]);
+
+      const values = [header, ...rows];
+
+      // 3. Append data to the new Spreadsheet
+      const appendRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A1:append?valueInputOption=USER_ENTERED`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          values: values
+        })
+      });
+
+      if (!appendRes.ok) {
+        const errorData = await appendRes.json();
+        throw new Error(errorData.error?.message || 'Failed to append data');
+      }
+
+      alert("Successfully exported orders to Google Sheets! Opening the sheet now...");
+      window.open(spreadsheetUrl, '_blank');
+
+    } catch (err: any) {
+      alert("Failed to export to Google Sheets: " + err.message);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleLogout = async () => {
     await logout();
     setUser(null);
     setEmails([]);
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert("Image must be less than 2MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAdminProfilePic(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in pb-16">
       <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center space-x-3">
-          <div className="bg-[#2D5A27] p-2.5 rounded-xl shadow-sm">
-            <ShieldCheck className="h-6 w-6 text-white" />
-          </div>
+        <div className="flex items-center space-x-4">
+          <label className="cursor-pointer group relative flex-shrink-0">
+            <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+            {adminProfilePic ? (
+              <img src={adminProfilePic} alt="Admin" className="h-12 w-12 rounded-xl object-cover shadow-sm ring-2 ring-transparent group-hover:ring-[#2D5A27] transition-all" />
+            ) : (
+              <div className="bg-[#2D5A27] p-3 rounded-xl shadow-sm group-hover:bg-[#23471E] transition-colors">
+                <ShieldCheck className="h-6 w-6 text-white" />
+              </div>
+            )}
+            <div className="absolute -bottom-1.5 -right-1.5 bg-white rounded-full p-1 shadow border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Camera className="w-3.5 h-3.5 text-gray-500" />
+            </div>
+          </label>
           <h1 className="text-3xl font-bold text-gray-900">{t('admin_panel')}</h1>
         </div>
         
@@ -166,11 +263,11 @@ export function AdminPanel() {
           )}
         </button>
         <button 
-          onClick={() => setActiveTab('gmail')}
-          className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'gmail' ? 'border-[#2D5A27] text-[#2D5A27]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+          onClick={() => setActiveTab('workspace')}
+          className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'workspace' ? 'border-[#2D5A27] text-[#2D5A27]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
         >
           <Mail className="w-5 h-5"/>
-          Gmail Sync
+          Workspace Sync
         </button>
       </div>
 
@@ -358,12 +455,12 @@ export function AdminPanel() {
         </div>
       )}
 
-      {activeTab === 'gmail' && (
+      {activeTab === 'workspace' && (
         <div className="bg-white rounded-2xl shadow-sm border border-[#E1E8DE] p-8">
           <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-100">
             <div>
-              <h2 className="text-xl font-bold text-gray-800">Gmail Integration</h2>
-              <p className="text-sm text-gray-500 mt-1">Connect your Gmail to send order updates and view unread messages.</p>
+              <h2 className="text-xl font-bold text-gray-800">Workspace Integration</h2>
+              <p className="text-sm text-gray-500 mt-1">Connect your Google Workspace to send order updates, view unread messages, and export orders to Sheets.</p>
             </div>
             {user && (
               <button onClick={handleLogout} className="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors">
@@ -398,14 +495,24 @@ export function AdminPanel() {
                   <div className="text-sm text-gray-500 mb-1">Connected account</div>
                   <div className="font-bold text-gray-900">{user.email}</div>
                 </div>
-                <button 
-                  onClick={handleFetchEmails}
-                  disabled={isLoadingEmails}
-                  className="flex items-center space-x-2 bg-[#F4F7F2] hover:bg-[#E1E8DE] text-[#2D5A27] px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isLoadingEmails ? 'animate-spin' : ''}`} />
-                  <span>Sync Unread</span>
-                </button>
+                <div className="flex space-x-2">
+                  <button 
+                    onClick={handleExportOrdersToSheets}
+                    disabled={isExporting}
+                    className="flex items-center space-x-2 bg-[#F0FDF4] border border-[#BBF7D0] hover:bg-[#DCFCE7] text-[#166534] px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isExporting ? 'animate-spin' : ''}`} />
+                    <span>Export Orders to Sheets</span>
+                  </button>
+                  <button 
+                    onClick={handleFetchEmails}
+                    disabled={isLoadingEmails}
+                    className="flex items-center space-x-2 bg-[#F4F7F2] hover:bg-[#E1E8DE] text-[#2D5A27] px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isLoadingEmails ? 'animate-spin' : ''}`} />
+                    <span>Sync Unread</span>
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4">
