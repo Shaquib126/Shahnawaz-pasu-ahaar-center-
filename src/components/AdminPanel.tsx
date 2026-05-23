@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../StoreContext';
 import { Category } from '../types';
-import { Plus, Trash2, ShieldCheck, X, Edit2, Package, ListChecks, CheckCircle2, Mail, RefreshCw, Camera, User } from 'lucide-react';
+import { Plus, Trash2, ShieldCheck, X, Edit2, Package, ListChecks, CheckCircle2, Mail, RefreshCw, Camera, User, LayoutDashboard, DollarSign, ShoppingCart, Activity } from 'lucide-react';
 import { initAuth, googleSignIn, logout, getAccessToken } from '../auth';
 
 export function AdminPanel() {
   const { products, orders, addProduct, updateProduct, deleteProduct, updateOrderStatus, adminProfilePic, setAdminProfilePic, changeAdminPassword, t } = useStore();
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'workspace' | 'settings'>('products');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'workspace' | 'settings'>('dashboard');
   
   const [newPassword, setNewPassword] = useState('');
   
@@ -241,6 +241,13 @@ export function AdminPanel() {
 
       <div className="flex space-x-4 border-b border-[#DCE4D8] mb-6 overflow-x-auto">
         <button 
+          onClick={() => setActiveTab('dashboard')}
+          className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'dashboard' ? 'border-[#2D5A27] text-[#2D5A27]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+        >
+          <LayoutDashboard className="w-5 h-5"/>
+          Dashboard
+        </button>
+        <button 
           onClick={() => setActiveTab('products')}
           className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'products' ? 'border-[#2D5A27] text-[#2D5A27]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
         >
@@ -274,6 +281,38 @@ export function AdminPanel() {
           Settings
         </button>
       </div>
+
+      {activeTab === 'dashboard' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-sm border border-[#DCE4D8] p-6 flex flex-col">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="bg-blue-100 p-3 rounded-xl">
+                <ListChecks className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">Total Orders</h3>
+            </div>
+            <p className="text-4xl font-bold text-gray-900">{orders.length}</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-[#DCE4D8] p-6 flex flex-col">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="bg-green-100 p-3 rounded-xl">
+                <DollarSign className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">Total Revenue</h3>
+            </div>
+            <p className="text-4xl font-bold text-gray-900">${orders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-[#DCE4D8] p-6 flex flex-col">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="bg-purple-100 p-3 rounded-xl">
+                <ShoppingCart className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">Items Sold</h3>
+            </div>
+            <p className="text-4xl font-bold text-gray-900">{orders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0)}</p>
+          </div>
+        </div>
+      )}
 
       {activeTab === 'products' && (
         <>
