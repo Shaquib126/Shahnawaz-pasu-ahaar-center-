@@ -4,12 +4,13 @@ import { Lock } from 'lucide-react';
 
 export function Login({ setView }: { setView: (v: any) => void }) {
   const { loginAdmin, t } = useStore();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginAdmin(username)) {
+    if (loginAdmin(email, password)) {
       setView('admin');
     } else {
       setError(true);
@@ -28,23 +29,41 @@ export function Login({ setView }: { setView: (v: any) => void }) {
         
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('username')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input 
-              type="text"
-              value={username}
+              type="email"
+              value={email}
               onChange={(e) => {
-                setUsername(e.target.value);
+                setEmail(e.target.value);
                 setError(false);
               }}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#558B4D] focus:border-[#558B4D] outline-none transition-all ${
                 error ? 'border-red-300 bg-red-50' : 'border-[#DCE4D8]'
               }`}
-              placeholder="admin"
+              placeholder="saqibjamal723@gmail.com"
+              required
               autoFocus
             />
-            {error && <p className="text-red-500 text-sm mt-1.5 font-medium">Invalid username. Hint: use 'admin'</p>}
           </div>
           
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input 
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError(false);
+              }}
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#558B4D] focus:border-[#558B4D] outline-none transition-all ${
+                error ? 'border-red-300 bg-red-50' : 'border-[#DCE4D8]'
+              }`}
+              placeholder="••••••••"
+              required
+            />
+            {error && <p className="text-red-500 text-sm mt-1.5 font-medium">Invalid email or password.</p>}
+          </div>
+
           <button 
             type="submit"
             className="w-full bg-[#2D5A27] hover:bg-[#23471E] text-white font-medium py-2.5 rounded-lg transition-colors shadow-sm"

@@ -1,62 +1,168 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import Stripe from "stripe";
+import Razorpay from "razorpay";
 
-// Lazy initialization of Stripe client
-let stripeClient: Stripe | null = null;
-function getStripe() {
-  if (!stripeClient) {
-    if (!process.env.STRIPE_SECRET_KEY) {
-      throw new Error("STRIPE_SECRET_KEY is not configured.");
+import mongoose from "mongoose";
+import { Product, Order, User } from "./src/server/models";
+
+// Lazy initialization of Razorpay client
+let razorpayClient: Razorpay | null = null;
+function getRazorpay() {
+  if (!razorpayClient) {
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      throw new Error("Razorpay keys are not configured. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.");
     }
-    stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2023-10-16" as any,
+    razorpayClient = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
   }
-  return stripeClient;
+  return razorpayClient;
 }
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  if (process.env.MONGODB_URI) {
+    try {
+      await mongoose.connect(process.env.MONGODB_URI);
+      console.log("Connected to MongoDB successfully");
+    } catch (err) {
+      console.error("MongoDB connection error:", err);
+    }
+  } else {
+    console.log("MONGODB_URI not found. Skipping MongoDB connection.");
+  }
+
   app.use(express.json());
+
+  // --- MongoDB API Routes ---
+
+  // Sync User
+  app.post("/api/users/sync", async (req, res) => {
+    if (!process.env.MONGODB_URI) return res.status(400).json({ error: "DB not connected" });
+    try {
+      const { uid, email, displayName, photoURL } = req.body;
+      let user = await User.findOne({ firebaseUid: uid });
+      if (!user) {
+        user = new User({ firebaseUid: uid, email, displayName, photoURL });
+        await user.save();
+      } else {
+        user.email = email;
+        user.displayName = displayName;
+        user.photoURL = photoURL;
+        await user.save();
+      }
+      res.json(user);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Get all products
+  app.get("/api/products", async (req, res) => {
+    if (!process.env.MONGODB_URI) return res.json([]);
+    try {
+      const products = await Product.find().lean();
+      res.json(products);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Create a product
+  app.post("/api/products", async (req, res) => {
+    if (!process.env.MONGODB_URI) return res.status(400).json({ error: "DB not connected" });
+    try {
+      const product = new Product(req.body);
+      await product.save();
+      res.json(product);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Update a product
+  app.put("/api/products/:id", async (req, res) => {
+    if (!process.env.MONGODB_URI) return res.status(400).json({ error: "DB not connected" });
+    try {
+      const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+      res.json(product);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Delete a product
+  app.delete("/api/products/:id", async (req, res) => {
+    if (!process.env.MONGODB_URI) return res.status(400).json({ error: "DB not connected" });
+    try {
+      await Product.findByIdAndDelete(req.params.id);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Get all orders
+  app.get("/api/orders", async (req, res) => {
+    if (!process.env.MONGODB_URI) return res.json([]);
+    try {
+      const orders = await Order.find().populate('items.productId').lean();
+      res.json(orders);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Create an order
+  app.post("/api/orders", async (req, res) => {
+    if (!process.env.MONGODB_URI) return res.status(400).json({ error: "DB not connected" });
+    try {
+      const order = new Order(req.body);
+      await order.save();
+      res.json(order);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Update order status
+  app.patch("/api/orders/:id/status", async (req, res) => {
+    if (!process.env.MONGODB_URI) return res.status(400).json({ error: "DB not connected" });
+    try {
+      const order = await Order.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
+      res.json(order);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
 
   app.post("/api/create-checkout-session", async (req, res) => {
     try {
-      const { items, orderId } = req.body;
-      const origin = process.env.APP_URL || req.headers.origin || `http://localhost:${PORT}`;
-
-      if (!process.env.STRIPE_SECRET_KEY) {
-        // Fallback for preview environments without Stripe configured
-        console.log("STRIPE_SECRET_KEY not found. Using mock checkout.");
-        return res.json({ id: "mock_session", url: `${origin}?success=true&order_id=${orderId || ''}` });
+      const { items, orderId, totalAmount } = req.body;
+      
+      if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+        // Fallback for preview environments without Razorpay configured
+        console.log("RAZORPAY keys not found. Using mock checkout.");
+        return res.json({ id: "mock_session", amount: totalAmount * 100, currency: "INR" });
       }
 
-      const stripe = getStripe();
+      const razorpay = getRazorpay();
       
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        line_items: items.map((item: any) => ({
-          price_data: {
-            currency: "inr",
-            product_data: {
-              name: item.name,
-              images: item.imageUrl ? [item.imageUrl] : [],
-            },
-            unit_amount: Math.round(item.price * 100), // convert to paise
-          },
-          quantity: item.quantity,
-        })),
-        mode: "payment",
-        success_url: `${origin}?success=true&order_id=${orderId || ''}`,
-        cancel_url: `${origin}?canceled=true`,
-      });
-
-      res.json({ id: session.id, url: session.url });
+      const options = {
+        amount: Math.round(totalAmount * 100), // amount in smallest currency unit (paise)
+        currency: "INR",
+        receipt: `receipt_${orderId || Date.now()}`
+      };
+      
+      const order = await razorpay.orders.create(options);
+      
+      res.json({ id: order.id, amount: order.amount, currency: order.currency, key: process.env.RAZORPAY_KEY_ID });
     } catch (error: any) {
-      console.error("Error creating Stripe session:", error);
+      console.error("Error creating Razorpay order:", error);
       res.status(500).json({ error: error.message || "Failed to create checkout session" });
     }
   });

@@ -16,7 +16,8 @@ interface StoreContextType {
   setAdminProfilePic: (pic: string | null) => void;
   t: (key: keyof typeof translations.en) => string;
   setLanguage: (lang: Language) => void;
-  loginAdmin: (username: string) => boolean;
+  loginAdmin: (email: string, pass: string) => boolean;
+  changeAdminPassword: (newPass: string) => void;
   logoutAdmin: () => void;
   loginCustomer: () => Promise<void>;
   logoutCustomer: () => Promise<void>;
@@ -67,6 +68,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = initAuth((user) => {
       setCurrentUser(user);
+      if (user) {
+        // Sync to MongoDB
+        fetch('/api/users/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL
+          })
+        }).catch(err => console.error("Error syncing user:", err));
+      }
     }, () => {
       setCurrentUser(null);
     });
@@ -87,28 +101,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const t = (key: keyof typeof translations.en) => translations[language][key];
 
-  const loginAdmin = (username: string) => {
-    if (username === 'admin') {
+  const [adminPassword, setAdminPassword] = useState(() => localStorage.getItem('adminPassword') || 'admin123');
+
+  useEffect(() => {
+    localStorage.setItem('adminPassword', adminPassword);
+  }, [adminPassword]);
+
+  const loginAdmin = (email: string, pass: string) => {
+    if (email === 'saqibjamal723@gmail.com' && pass === adminPassword) {
       setIsAdmin(true);
       return true;
     }
     return false;
   };
 
+  const changeAdminPassword = (newPass: string) => {
+    setAdminPassword(newPass);
+    alert('Admin password updated successfully');
+  };
+
   const logoutAdmin = () => setIsAdmin(false);
 
   const loginCustomer = async () => {
     try {
-      const res = await googleSignIn(false);
-      if (res?.user) {
-        setCurrentUser(res.user);
-      }
+      await googleSignIn(false);
     } catch (err: any) {
-      if (err.code === 'auth/popup-closed-by-user') {
-        alert("Sign-in popup was closed. Please try again or open in new tab.");
-      } else {
-        alert("Failed to login with Google: " + err.message);
-      }
+      alert("Failed to initiate login with Google: " + err.message);
     }
   };
 
@@ -182,7 +200,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   return (
     <StoreContext.Provider value={{
       products, cart, orders, language, isAdmin, currentUser, adminProfilePic, t,
-      setAdminProfilePic, setLanguage, loginAdmin, logoutAdmin, loginCustomer, logoutCustomer,
+      setAdminProfilePic, setLanguage, loginAdmin, changeAdminPassword, logoutAdmin, loginCustomer, logoutCustomer,
       addToCart, removeFromCart, updateCartQuantity, clearCart,
       addProduct, updateProduct, deleteProduct,
       placeOrder, updateOrderStatus

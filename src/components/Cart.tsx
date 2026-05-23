@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../StoreContext';
-import { Trash2, Plus, Minus, ArrowLeft, CheckCircle2, ShoppingCart, Leaf, Truck, MapPin, MessageCircle, X } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowLeft, CheckCircle2, ShoppingCart, Leaf, Truck, MapPin, MessageCircle, X, QrCode } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 export function Cart({ setView }: { setView: (v: any) => void }) {
   const { cart, products, updateCartQuantity, removeFromCart, clearCart, t, placeOrder, currentUser } = useStore();
@@ -30,18 +31,35 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
   const deliveryFee = 50; // Fixed delivery fee
   const total = subtotal + deliveryFee;
 
-  const handleGetCurrentLocation = () => {
+  const handleGetCurrentLocation = async () => {
+    setIsLocating(true);
+    
+    const fallbackToIPLocation = async () => {
+      try {
+        const res = await fetch('https://ipapi.co/json/');
+        const data = await res.json();
+        if (data && data.city) {
+          const address = `${data.city}, ${data.region}, ${data.country_name}`;
+          setDeliveryDetails(d => ({ ...d, address }));
+        } else {
+          alert("Unable to automatically detect location. Please enter manually.");
+        }
+      } catch (e) {
+        alert("Failed to retrieve location. Please enter manually.");
+      } finally {
+        setIsLocating(false);
+      }
+    };
+
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
+      await fallbackToIPLocation();
       return;
     }
-    
-    setIsLocating(true);
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
           const { latitude, longitude } = position.coords;
-          // Simple reverse geocoding via free nominatim API (For demo purposes)
           const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
           const data = await res.json();
           if (data && data.display_name) {
@@ -55,10 +73,11 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
           setIsLocating(false);
         }
       },
-      (error) => {
-        alert("Unable to retrieve your location");
-        setIsLocating(false);
-      }
+      () => {
+        // Fallback to IP if geolocation fails (e.g. permission denied or iframe blocked)
+        fallbackToIPLocation();
+      },
+      { timeout: 5000 }
     );
   };
 
@@ -98,61 +117,33 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
     setView('shop');
   };
 
-  const processStripePayment = async () => {
-    try {
-      // 1. Create a pending order internally
-      const orderId = placeOrder({
-        items: cart,
-        customerInfo: deliveryDetails,
-        totalAmount: total
-      });
+  const [showUpiModal, setShowUpiModal] = useState(false);
+  const upiId = (import.meta as any).env.VITE_UPI_ID || "merchant@upi";
+  const upiName = (import.meta as any).env.VITE_UPI_NAME || "EcoShop";
 
-      // 2. Add a delivery fee proxy item for Stripe
-      const stripeItems = cartItems.map(i => ({
-        name: i.product.name,
-        price: i.product.price,
-        quantity: i.quantity,
-        imageUrl: i.product.imageUrl
-      }));
-      
-      stripeItems.push({
-        name: "Delivery Service Fee",
-        price: deliveryFee,
-        quantity: 1,
-        imageUrl: undefined
-      });
+  const processUpiPayment = () => {
+    setShowConfirmModal(false);
+    setShowUpiModal(true);
+  };
 
-      // 3. Initiate checkout session
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: stripeItems,
-          orderId: orderId
-        })
-      });
-
-      const data = await response.json();
-      
-      if (data.error) {
-        alert('Payment Error: ' + data.error + '\n\nPlease configure STRIPE_SECRET_KEY in AI Studio settings.');
-        return;
-      }
-      
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch (err) {
-      alert('Failed to initiate checkout.');
-    }
+  const finalizeOrder = () => {
+    // 1. Create a pending order internally
+    placeOrder({
+      items: cart,
+      customerInfo: deliveryDetails,
+      totalAmount: total
+    });
+    clearCart();
+    alert("Thank you! Your order has been placed and payment is verifying.");
+    setView('shop');
   };
 
   const confirmOrder = async () => {
-    setShowConfirmModal(false);
     if (checkoutAction === 'whatsapp') {
+      setShowConfirmModal(false);
       processWhatsAppOrder();
     } else if (checkoutAction === 'pay') {
-      await processStripePayment();
+      processUpiPayment();
     }
   };
 
@@ -380,6 +371,48 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
                     <span>Confirm & Pay Now</span>
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUpiModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-xl overflow-hidden flex flex-col items-center p-6 text-center">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Scan to Pay</h2>
+            <p className="text-gray-500 mb-6 text-sm">Please scan this QR code with any UPI app to complete your payment.</p>
+            
+            <div className="bg-white p-4 rounded-xl shadow-inner border border-gray-100 mb-6">
+              <QRCodeSVG 
+                value={`upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${total}&cu=INR`} 
+                size={200}
+                level="M"
+                includeMargin={true}
+              />
+            </div>
+            
+            <div className="text-2xl font-bold text-[#2D5A27] mb-6">₹{total}</div>
+
+            <div className="flex flex-col gap-3 w-full">
+              <a 
+                href={`upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${total}&cu=INR`}
+                className="w-full sm:hidden py-3 px-4 bg-[#2D5A27] hover:bg-[#23471E] text-white rounded-xl font-bold transition-colors text-center shadow-sm"
+              >
+                Pay with UPI App
+              </a>
+              <button 
+                onClick={finalizeOrder}
+                className="w-full py-3 px-4 bg-[#F4F7F2] hover:bg-[#E1E8DE] text-[#2D5A27] border border-[#DCE4D8] rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 className="w-5 h-5" />
+                I've made the payment
+              </button>
+              <button 
+                onClick={() => setShowUpiModal(false)}
+                className="w-full py-2 text-gray-500 hover:text-gray-700 font-medium text-sm transition-colors mt-2"
+              >
+                Cancel and go back
               </button>
             </div>
           </div>

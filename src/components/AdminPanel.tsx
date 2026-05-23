@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../StoreContext';
 import { Category } from '../types';
-import { Plus, Trash2, ShieldCheck, X, Edit2, Package, ListChecks, CheckCircle2, Mail, RefreshCw, Camera } from 'lucide-react';
+import { Plus, Trash2, ShieldCheck, X, Edit2, Package, ListChecks, CheckCircle2, Mail, RefreshCw, Camera, User } from 'lucide-react';
 import { initAuth, googleSignIn, logout, getAccessToken } from '../auth';
 
 export function AdminPanel() {
-  const { products, orders, addProduct, updateProduct, deleteProduct, updateOrderStatus, adminProfilePic, setAdminProfilePic, t } = useStore();
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'workspace'>('products');
+  const { products, orders, addProduct, updateProduct, deleteProduct, updateOrderStatus, adminProfilePic, setAdminProfilePic, changeAdminPassword, t } = useStore();
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'workspace' | 'settings'>('products');
+  
+  const [newPassword, setNewPassword] = useState('');
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -70,14 +72,9 @@ export function AdminPanel() {
 
   const handleGoogleLogin = async () => {
     try {
-      const res = await googleSignIn(true);
-      if (res) setUser(res.user);
+      await googleSignIn(true);
     } catch (err: any) {
-      if (err.code === 'auth/popup-closed-by-user') {
-        alert("Sign-in popup was closed. Please try again. If you are in a preview window, try opening the app in a new tab.");
-      } else {
-        alert("Failed to login with Google");
-      }
+      alert("Failed to initiate Google login: " + err.message);
     }
   };
 
@@ -268,6 +265,13 @@ export function AdminPanel() {
         >
           <Mail className="w-5 h-5"/>
           Workspace Sync
+        </button>
+        <button 
+          onClick={() => setActiveTab('settings' as any)}
+          className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'settings' as any ? 'border-[#2D5A27] text-[#2D5A27]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+        >
+          <ShieldCheck className="w-5 h-5"/>
+          Settings
         </button>
       </div>
 
@@ -536,6 +540,93 @@ export function AdminPanel() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {activeTab === 'settings' && (
+        <div className="bg-white rounded-2xl shadow-sm border border-[#E1E8DE] p-8">
+          <div className="mb-8 border-b border-gray-100 pb-6">
+            <h2 className="text-xl font-bold text-gray-800">Admin Settings</h2>
+            <p className="text-sm text-gray-500 mt-1">Manage your administrator account preferences.</p>
+          </div>
+
+          <div className="max-w-md space-y-10">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Profile Picture</h3>
+              <div className="flex items-center gap-6">
+                {adminProfilePic ? (
+                  <img src={adminProfilePic} alt="Admin Profile" className="h-20 w-20 rounded-full object-cover shadow-sm" />
+                ) : (
+                  <div className="h-20 w-20 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+                    <User className="h-8 w-8" />
+                  </div>
+                )}
+                <div>
+                  <label className="bg-white border border-[#DCE4D8] hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg cursor-pointer transition-colors inline-flex items-center">
+                    <span>Upload Image</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setAdminProfilePic(reader.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                  {adminProfilePic && (
+                    <button 
+                      onClick={() => setAdminProfilePic(null)}
+                      className="text-red-500 hover:text-red-600 text-sm font-medium ml-4 mt-2 inline-block transition-colors"
+                    >
+                      Remove
+                    </button>
+                  )}
+                  <p className="text-xs text-gray-500 mt-2">Recommended: 256x256px or larger. Max 2MB.</p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Change Password</h3>
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (newPassword.length < 6) {
+                  alert('Password must be at least 6 characters.');
+                  return;
+                }
+                changeAdminPassword(newPassword);
+                setNewPassword('');
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                <input 
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#558B4D] focus:border-[#558B4D] outline-none transition-all"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+              <button 
+                type="submit"
+                className="bg-[#2D5A27] hover:bg-[#23471E] text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-sm"
+              >
+                Update Password
+              </button>
+            </form>
+            </div>
+          </div>
         </div>
       )}
 

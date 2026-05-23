@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
+import { getAuth, signInWithRedirect, GoogleAuthProvider, onAuthStateChanged, User, getRedirectResult } from 'firebase/auth';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
@@ -22,6 +22,20 @@ export const initAuth = (
   onAuthSuccess?: (user: User, token: string | null) => void,
   onAuthFailure?: () => void
 ) => {
+  // Try to get redirect result first
+  getRedirectResult(auth).then((result) => {
+    if (result) {
+      if (result.providerId === adminProvider.providerId) {
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        if (credential?.accessToken) {
+          cachedAccessToken = credential.accessToken;
+        }
+      }
+    }
+  }).catch(error => {
+    console.error("Redirect result error:", error);
+  });
+
   return onAuthStateChanged(auth, async (user: User | null) => {
     if (user) {
       if (cachedAccessToken || !isSigningIn) {
@@ -37,28 +51,16 @@ export const initAuth = (
   });
 };
 
-export const googleSignIn = async (isAdmin: boolean = false): Promise<{ user: User; accessToken: string | null } | null> => {
+export const googleSignIn = async (isAdmin: boolean = false): Promise<void> => {
   try {
     isSigningIn = true;
     const provider = isAdmin ? adminProvider : customerProvider;
-    const result = await signInWithPopup(auth, provider);
-    
-    let token = null;
-    if (isAdmin) {
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (!credential?.accessToken) {
-        throw new Error('Failed to get access token from Firebase Auth');
-      }
-      token = credential.accessToken;
-      cachedAccessToken = token;
-    }
-    
-    return { user: result.user, accessToken: token };
+    await signInWithRedirect(auth, provider);
   } catch (error: any) {
     console.error('Sign in error:', error);
-    throw error;
-  } finally {
+    alert('Sign in failed: ' + error.message);
     isSigningIn = false;
+    throw error;
   }
 };
 
