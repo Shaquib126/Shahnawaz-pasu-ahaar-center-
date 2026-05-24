@@ -11,17 +11,19 @@ const productSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const cartItemSchema = new mongoose.Schema({
-  productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+  productId: { type: String, required: true },
   quantity: { type: Number, required: true, min: 1 }
 });
 
 const customerInfoSchema = new mongoose.Schema({
   name: { type: String, required: true },
   phone: { type: String, required: true },
-  address: { type: String, required: true }
+  address: { type: String, required: true },
+  email: { type: String }
 });
 
 const orderSchema = new mongoose.Schema({
+  id: { type: String, required: true },
   items: [cartItemSchema],
   customerInfo: customerInfoSchema,
   totalAmount: { type: Number, required: true },

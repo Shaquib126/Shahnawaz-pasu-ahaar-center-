@@ -3,7 +3,7 @@ import { Product, CartItem, Order } from './types';
 import { INITIAL_PRODUCTS } from './data';
 import { Language, translations } from './i18n';
 import { User } from 'firebase/auth';
-import { initAuth, googleSignIn, logout as firebaseLogout } from './auth';
+import { initAuth, googleSignIn, logout as firebaseLogout, getAccessToken } from './auth';
 
 interface StoreContextType {
   products: Product[];
@@ -30,6 +30,7 @@ interface StoreContextType {
   deleteProduct: (productId: string) => void;
   placeOrder: (order: Omit<Order, 'id' | 'date' | 'status'>) => string;
   updateOrderStatus: (id: string, status: Order['status']) => void;
+  cancelOrder: (orderId: string) => Promise<boolean>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -85,6 +86,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setCurrentUser(null);
     });
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setProducts(data.map((p: any) => ({
+            id: p.id || p._id,
+            name: p.name,
+            category: p.category,
+            description: p.description,
+            price: p.price,
+            stock: p.stock,
+            icon: p.icon,
+            imageUrl: p.imageUrl
+          })));
+        }
+      })
+      .catch(err => console.error("Error loading products from MongoDB:", err));
+
+    fetch('/api/orders')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setOrders(data);
+        }
+      })
+      .catch(err => console.error("Error loading orders from MongoDB:", err));
   }, []);
 
   useEffect(() => {
@@ -190,11 +220,144 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       status: 'Pending Payment'
     };
     setOrders(prev => [newOrder, ...prev]);
+
+    // Async sync to MongoDB database
+    fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newOrder)
+    }).catch(err => console.error("Error syncing order to MongoDB:", err));
+
     return newOrder.id;
   };
 
-  const updateOrderStatus = (orderId: string, status: Order['status']) => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+  const sendOrderStatusEmail = async (order: Order, newStatus: string) => {
+    const token = await getAccessToken();
+    if (!token) {
+      console.warn("No Google Workspace token available; unable to send automatic status email.");
+      return;
+    }
+    
+    const recipient = order.customerInfo.email;
+    if (!recipient) {
+      console.warn("No email provided in customer information; skipping automatic email status send.");
+      return;
+    }
+
+    const subject = `Order #${order.id} update: Now ${newStatus}!`;
+    
+    const body = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #E1E8DE; border-radius: 12px; background-color: #F9FBF8;">
+        <h2 style="color: #2D5A27; text-align: center; border-bottom: 2px solid #2D5A27; padding-bottom: 10px;">Order Status Update</h2>
+        <p>Hello <strong>${order.customerInfo.name}</strong>,</p>
+        <p>Your order <strong>#${order.id}</strong> has been updated. Its status is now <strong>${newStatus}</strong>.</p>
+        
+        <div style="background-color: #ffffff; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #DCE4D8;">
+          <h3 style="margin-top: 0; color: #2C3E2D;">Delivery Information</h3>
+          <p style="margin: 5px 0;"><strong>Name:</strong> ${order.customerInfo.name}</p>
+          <p style="margin: 5px 0;"><strong>Phone:</strong> ${order.customerInfo.phone}</p>
+          <p style="margin: 5px 0;"><strong>Address:</strong> ${order.customerInfo.address}</p>
+        </div>
+
+        <div style="background-color: #ffffff; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #DCE4D8;">
+          <h3 style="margin-top: 0; color: #2C3E2D;">Order Status Summary</h3>
+          <p style="margin: 5px 0;"><strong>New Status:</strong> <span style="background-color: ${newStatus === 'Processing' ? '#FEF3C7' : '#D1FAE5'}; color: ${newStatus === 'Processing' ? '#92400E' : '#065F46'}; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 14px;">${newStatus}</span></p>
+          <p style="margin: 5px 0;"><strong>Total Amount:</strong> ₹${order.totalAmount.toLocaleString()}</p>
+        </div>
+
+        <p style="text-align: center; color: #666; font-size: 12px; margin-top: 30px; border-top: 1px solid #E1E8DE; padding-top: 15px;">
+          Thank you for shopping with us!<br>
+          This email was sent automatically on behalf of the store.
+        </p>
+      </div>
+    `;
+
+    const emailContent = [
+      `To: ${recipient}`,
+      'Content-Type: text/html; charset=utf-8',
+      'MIME-Version: 1.0',
+      `Subject: ${subject}`,
+      '',
+      body
+    ].join('\r\n');
+
+    const encodedEmail = btoa(unescape(encodeURIComponent(emailContent)))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    try {
+      const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          raw: encodedEmail
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Gmail send API error detailed:', errorData);
+      } else {
+        console.log(`Automatic email update successfully sent to ${recipient} for order #${order.id}`);
+      }
+    } catch (error) {
+      console.error('Failed to send auto-gmail update:', error);
+    }
+  };
+
+  const updateOrderStatus = async (orderId: string, status: Order['status']) => {
+    let orderToEmail: Order | null = null;
+    let oldStatus: Order['status'] | null = null;
+
+    setOrders(prev => {
+      const order = prev.find(o => o.id === orderId);
+      if (order) {
+        orderToEmail = order;
+        oldStatus = order.status;
+      }
+      return prev.map(o => o.id === orderId ? { ...o, status } : o);
+    });
+
+    // Async sync status to MongoDB database
+    fetch(`/api/orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    }).catch(err => console.error("Error syncing status update to MongoDB:", err));
+
+    if (orderToEmail && oldStatus) {
+      const isFromPending = oldStatus.startsWith('Pending');
+      const isTargetStatus = status === 'Processing' || status === 'Delivered';
+      if (isFromPending && isTargetStatus && (orderToEmail as Order).customerInfo.email) {
+        try {
+          await sendOrderStatusEmail(orderToEmail, status);
+        } catch (err) {
+          console.error("Failed to send order status email automatically:", err);
+        }
+      }
+    }
+  };
+
+  const cancelOrder = async (orderId: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setOrders(prev => prev.filter(o => o.id !== orderId));
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Error canceling order:", err);
+      // Fallback: update local state anyway so user feels immediate effect
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      return false;
+    }
   };
 
   return (
@@ -203,7 +366,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setAdminProfilePic, setLanguage, loginAdmin, changeAdminPassword, logoutAdmin, loginCustomer, logoutCustomer,
       addToCart, removeFromCart, updateCartQuantity, clearCart,
       addProduct, updateProduct, deleteProduct,
-      placeOrder, updateOrderStatus
+      placeOrder, updateOrderStatus, cancelOrder
     }}>
       {children}
     </StoreContext.Provider>

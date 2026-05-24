@@ -110,7 +110,9 @@ async function startServer() {
   app.get("/api/orders", async (req, res) => {
     if (!process.env.MONGODB_URI) return res.json([]);
     try {
-      const orders = await Order.find().populate('items.productId').lean();
+      const email = req.query.email;
+      const query = typeof email === 'string' ? { "customerInfo.email": email } : {};
+      const orders = await Order.find(query).sort({ createdAt: -1 }).lean();
       res.json(orders);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -133,8 +135,25 @@ async function startServer() {
   app.patch("/api/orders/:id/status", async (req, res) => {
     if (!process.env.MONGODB_URI) return res.status(400).json({ error: "DB not connected" });
     try {
-      const order = await Order.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
+      let order = await Order.findOneAndUpdate({ id: req.params.id }, { status: req.body.status }, { new: true });
+      if (!order && mongoose.Types.ObjectId.isValid(req.params.id)) {
+        order = await Order.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
+      }
       res.json(order);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Delete an order (Cancel / Remove order from DB)
+  app.delete("/api/orders/:id", async (req, res) => {
+    if (!process.env.MONGODB_URI) return res.status(400).json({ error: "DB not connected" });
+    try {
+      let result = await Order.findOneAndDelete({ id: req.params.id });
+      if (!result && mongoose.Types.ObjectId.isValid(req.params.id)) {
+        result = await Order.findByIdAndDelete(req.params.id);
+      }
+      res.json({ success: true, deleted: result });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

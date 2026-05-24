@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../StoreContext';
-import { ShoppingCart, LogIn, LogOut, Settings, Leaf, User } from 'lucide-react';
+import { ShoppingCart, LogIn, LogOut, Settings, Leaf, User, ShoppingBag } from 'lucide-react';
 
 export function Header({ view, setView }: { view: string, setView: (v: any) => void }) {
   const { cart, language, setLanguage, t, isAdmin, logoutAdmin, currentUser, loginCustomer, logoutCustomer, adminProfilePic } = useStore();
@@ -42,7 +42,17 @@ export function Header({ view, setView }: { view: string, setView: (v: any) => v
             </button>
 
             {currentUser ? (
-              <div className="flex items-center space-x-1 sm:space-x-2">
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setView('my-orders')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#447A3C] transition-colors ${
+                    view === 'my-orders' ? 'bg-[#558B4D] border border-white/20' : 'border border-transparent'
+                  }`}
+                  title="My Orders"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>My Orders</span>
+                </button>
                 <span className="hidden md:block text-sm font-medium opacity-90 truncate max-w-[120px]">
                   {currentUser.displayName || currentUser.email}
                 </span>

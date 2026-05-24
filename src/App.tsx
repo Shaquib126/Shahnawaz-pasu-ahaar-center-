@@ -6,8 +6,9 @@ import { Cart } from './components/Cart';
 import { AdminPanel } from './components/AdminPanel';
 import { Login } from './components/Login';
 import { CookieConsent } from './components/CookieConsent';
+import { MyOrders } from './components/MyOrders';
 
-type View = 'shop' | 'cart' | 'admin' | 'login';
+type View = 'shop' | 'cart' | 'admin' | 'login' | 'my-orders';
 
 function MainApp() {
   const [view, setView] = useState<View>('shop');
@@ -40,6 +41,7 @@ function MainApp() {
         {view === 'admin' && isAdmin && <AdminPanel />}
         {view === 'admin' && !isAdmin && <Login setView={setView} />}
         {view === 'login' && <Login setView={setView} />}
+        {view === 'my-orders' && <MyOrders setView={setView} />}
       </main>
       <CookieConsent />
     </div>

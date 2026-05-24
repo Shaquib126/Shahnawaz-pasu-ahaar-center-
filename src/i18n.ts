@@ -39,7 +39,9 @@ export const translations = {
     status: "Status",
     date: "Date",
     mark_delivered: "Mark Delivered",
-    customer: "Customer"
+    customer: "Customer",
+    search_placeholder: "Search by name or description...",
+    no_results_found: "No products match your search query."
   },
   hi: {
     shop_title: "शाहनवाज़ पशु आहार केंद्र",
@@ -81,7 +83,9 @@ export const translations = {
     status: "स्थिति",
     date: "तारीख",
     mark_delivered: "वितरित चिह्नित करें",
-    customer: "ग्राहक"
+    customer: "ग्राहक",
+    search_placeholder: "नाम या विवरण खोजें...",
+    no_results_found: "आपकी खोज से मेल खाने वाला कोई उत्पाद नहीं मिला।"
   }
 };
 

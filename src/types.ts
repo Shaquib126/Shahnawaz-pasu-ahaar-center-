@@ -20,6 +20,7 @@ export interface CustomerInfo {
   name: string;
   phone: string;
   address: string;
+  email?: string;
 }
 
 export interface Order {

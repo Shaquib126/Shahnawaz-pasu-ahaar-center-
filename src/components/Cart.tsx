@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../StoreContext';
-import { Trash2, Plus, Minus, ArrowLeft, CheckCircle2, ShoppingCart, Leaf, Truck, MapPin, MessageCircle, X, QrCode } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowLeft, CheckCircle2, ShoppingCart, Leaf, Truck, MapPin, MessageCircle, X, QrCode, Printer } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { Order } from '../types';
 
 export function Cart({ setView }: { setView: (v: any) => void }) {
   const { cart, products, updateCartQuantity, removeFromCart, clearCart, t, placeOrder, currentUser } = useStore();
@@ -9,18 +10,24 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
   const [deliveryDetails, setDeliveryDetails] = useState({
     name: currentUser?.displayName || '',
     phone: '',
-    address: ''
+    address: '',
+    email: currentUser?.email || ''
   });
 
   useEffect(() => {
-    if (currentUser?.displayName && !deliveryDetails.name) {
-      setDeliveryDetails(d => ({ ...d, name: currentUser.displayName || '' }));
+    if (currentUser) {
+      setDeliveryDetails(d => ({
+        ...d,
+        name: d.name || currentUser.displayName || '',
+        email: d.email || currentUser.email || ''
+      }));
     }
   }, [currentUser]);
 
   const [isLocating, setIsLocating] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [checkoutAction, setCheckoutAction] = useState<'pay' | 'whatsapp' | null>(null);
+  const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
 
   const cartItems = cart.map(item => ({
     ...item,
@@ -82,8 +89,8 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
   };
 
   const handleWhatsAppOrderClick = () => {
-    if (!deliveryDetails.name || !deliveryDetails.phone || !deliveryDetails.address) {
-      alert("Please fill in your delivery details first.");
+    if (!deliveryDetails.name || !deliveryDetails.phone || !deliveryDetails.address || !deliveryDetails.email) {
+      alert("Please fill in your delivery details (including email) first.");
       return;
     }
     setCheckoutAction('whatsapp');
@@ -92,7 +99,7 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
 
   const handleCheckoutSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!deliveryDetails.name || !deliveryDetails.phone || !deliveryDetails.address) return;
+    if (!deliveryDetails.name || !deliveryDetails.phone || !deliveryDetails.address || !deliveryDetails.email) return;
     setCheckoutAction('pay');
     setShowConfirmModal(true);
   };
@@ -104,17 +111,25 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
 
     const message = `Hello! I would like to place an order:%0A%0A${itemsText}%0A%0ASubtotal: ₹${subtotal}%0ADelivery Fee: ₹${deliveryFee}%0A*Total: ₹${total}*%0A%0A*Delivery Details:*%0AName: ${deliveryDetails.name}%0APhone: ${deliveryDetails.phone}%0AAddress: ${deliveryDetails.address}`;
 
-    placeOrder({
+    const orderId = placeOrder({
       items: cart,
       customerInfo: deliveryDetails,
       totalAmount: total
     });
     
+    setPlacedOrder({
+      id: orderId,
+      date: new Date().toISOString(),
+      items: [...cart],
+      customerInfo: deliveryDetails,
+      totalAmount: total,
+      status: 'Pending Payment'
+    });
+
     clearCart();
 
     const whatsappUrl = `https://wa.me/9196169461?text=${message}`;
     window.open(whatsappUrl, '_blank');
-    setView('shop');
   };
 
   const [showUpiModal, setShowUpiModal] = useState(false);
@@ -128,14 +143,23 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
 
   const finalizeOrder = () => {
     // 1. Create a pending order internally
-    placeOrder({
+    const orderId = placeOrder({
       items: cart,
       customerInfo: deliveryDetails,
       totalAmount: total
     });
+    
+    setPlacedOrder({
+      id: orderId,
+      date: new Date().toISOString(),
+      items: [...cart],
+      customerInfo: deliveryDetails,
+      totalAmount: total,
+      status: 'Pending Payment'
+    });
+
     clearCart();
     alert("Thank you! Your order has been placed and payment is verifying.");
-    setView('shop');
   };
 
   const confirmOrder = async () => {
@@ -146,6 +170,164 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
       processUpiPayment();
     }
   };
+
+  if (placedOrder) {
+    return (
+      <div className="max-w-2xl mx-auto py-8 px-4 animate-fade-in pb-16">
+        <style dangerouslySetInnerHTML={{__html: `
+          @media print {
+            body {
+              background-color: white !important;
+              color: black !important;
+            }
+            body * {
+              visibility: hidden !important;
+            }
+            #invoice-print-area, #invoice-print-area * {
+              visibility: visible !important;
+            }
+            #invoice-print-area {
+              position: absolute !important;
+              left: 4mm !important;
+              top: 4mm !important;
+              width: calc(100% - 8mm) !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              border: none !important;
+              box-shadow: none !important;
+            }
+          }
+        `}} />
+
+        <div className="flex flex-col sm:flex-row gap-4 mb-8 justify-between items-center print:hidden">
+          <div className="flex items-center space-x-3">
+            <div className="bg-[#2D5A27] text-white p-2 rounded-full">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Order Placed Successfully!</h2>
+              <p className="text-sm text-gray-500">Order #{placedOrder.id} is registered</p>
+            </div>
+          </div>
+
+          <div className="flex gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => window.print()}
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-[#DCE4D8] hover:bg-[#F4F7F2] text-gray-700 rounded-xl font-bold transition-all shadow-sm"
+              id="btn-print-invoice"
+            >
+              <Printer className="w-5 h-5 text-gray-500" />
+              <span>Print Invoice</span>
+            </button>
+            <button
+              onClick={() => {
+                setPlacedOrder(null);
+                setView('shop');
+              }}
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 bg-[#2D5A27] hover:bg-[#23471E] text-white rounded-xl font-bold transition-all shadow-sm"
+              id="btn-return-shop"
+            >
+              <span>Return to Shop</span>
+            </button>
+          </div>
+        </div>
+
+        <div 
+          id="invoice-print-area" 
+          className="bg-white rounded-2xl shadow-sm border border-[#E1E8DE] p-6 sm:p-8 md:p-10 text-[#2C3E2D]"
+        >
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pb-6 border-b border-dashed border-[#E1E8DE]">
+            <div>
+              <h1 className="text-2xl font-bold text-[#2D5A27] leading-tight mb-1">
+                Shahnawaz Pasu Ahaar Center
+              </h1>
+              <p className="text-xs text-gray-500 max-w-sm">
+                Premium Cattle Feed, Nutrients & Veterinary Medicines shop. Thank you for your business!
+              </p>
+            </div>
+            <div className="sm:text-right bg-[#F4F7F2] p-3 rounded-xl border border-[#E1E8DE] min-w-[200px]">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-[#2D5A27] block mb-1">TAX INVOICE / RECEIPT</span>
+              <div className="text-sm font-bold text-gray-800">No: #{placedOrder.id}</div>
+              <div className="text-xs text-gray-500 mt-1">Date: {new Date(placedOrder.date).toLocaleDateString()}</div>
+              <div className="text-xs text-gray-500">Status: {placedOrder.status}</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-6 border-b border-[#E1E8DE]">
+            <div>
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Billed To (Customer)</h3>
+              <p className="font-bold text-gray-900 text-sm leading-snug">{placedOrder.customerInfo.name}</p>
+              {placedOrder.customerInfo.email && (
+                <p className="text-xs text-[#2D5A27] mt-0.5">{placedOrder.customerInfo.email}</p>
+              )}
+              <p className="text-xs text-gray-600 mt-0.5">Phone: {placedOrder.customerInfo.phone}</p>
+            </div>
+            <div>
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Shipping Address</h3>
+              <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-line bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                {placedOrder.customerInfo.address}
+              </p>
+            </div>
+          </div>
+
+          <div className="py-6">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Order Details</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-[#E1E8DE] bg-gray-50">
+                    <th className="py-2 px-3 font-semibold text-gray-600">Product</th>
+                    <th className="py-2 px-3 font-semibold text-gray-600 text-center w-16">Qty</th>
+                    <th className="py-2 px-3 font-semibold text-gray-600 text-right w-24">Price</th>
+                    <th className="py-2 px-3 font-semibold text-gray-600 text-right w-24">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {placedOrder.items.map((item: any) => {
+                    const prod = products.find(p => p.id === item.productId);
+                    return (
+                      <tr key={item.productId} className="text-gray-700">
+                        <td className="py-3 px-3 font-medium text-gray-900">
+                          {prod ? prod.name : `Product ID: ${item.productId}`}
+                        </td>
+                        <td className="py-3 px-3 text-center text-gray-800">{item.quantity}</td>
+                        <td className="py-3 px-3 text-right text-gray-800">₹{(prod?.price || 0).toLocaleString()}</td>
+                        <td className="py-3 px-3 text-right font-semibold text-gray-900">
+                          ₹{((prod?.price || 0) * item.quantity).toLocaleString()}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-[#E1E8DE] flex justify-end">
+            <div className="w-full sm:w-64 space-y-2 text-xs">
+              <div className="flex justify-between text-gray-600">
+                <span>Subtotal</span>
+                <span>₹{(placedOrder.totalAmount - (placedOrder.totalAmount > 50 ? 50 : 0)).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Delivery Fee</span>
+                <span>₹{placedOrder.totalAmount > 50 ? 50 : 0}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm font-bold text-[#2D5A27] bg-[#E9F0E6] p-2.5 rounded-lg border border-[#DCE4D8]">
+                <span>Total Due</span>
+                <span>₹{placedOrder.totalAmount.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-10 pt-6 border-t border-dashed border-[#E1E8DE] text-center text-[10px] text-gray-400">
+            <p className="font-medium text-gray-500 mb-0.5">Thank you for your purchase with Shahnawaz Pasu Ahaar Center!</p>
+            <p>For inquiries, please reach out to us referencing Order No: #{placedOrder.id}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (cartItems.length === 0) {
     return (
@@ -265,6 +447,9 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
                   <input required type="text" placeholder={t('full_name' as any)} value={deliveryDetails.name} onChange={e => setDeliveryDetails(d => ({ ...d, name: e.target.value }))} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#558B4D] focus:border-[#558B4D] outline-none text-sm transition-all" />
                 </div>
                 <div>
+                  <input required type="email" placeholder="Email Address" value={deliveryDetails.email} onChange={e => setDeliveryDetails(d => ({ ...d, email: e.target.value }))} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#558B4D] focus:border-[#558B4D] outline-none text-sm transition-all" />
+                </div>
+                <div>
                   <input required type="tel" placeholder={t('phone_number' as any)} value={deliveryDetails.phone} onChange={e => setDeliveryDetails(d => ({ ...d, phone: e.target.value }))} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-[#558B4D] focus:border-[#558B4D] outline-none text-sm transition-all" />
                 </div>
                 <div className="relative">
@@ -313,6 +498,7 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Delivery Details</h3>
                 <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm text-gray-700">
                   <p><span className="font-semibold text-gray-900">Name:</span> {deliveryDetails.name}</p>
+                  <p><span className="font-semibold text-gray-900">Email:</span> {deliveryDetails.email}</p>
                   <p><span className="font-semibold text-gray-900">Phone:</span> {deliveryDetails.phone}</p>
                   <p><span className="font-semibold text-gray-900">Address:</span> {deliveryDetails.address}</p>
                 </div>

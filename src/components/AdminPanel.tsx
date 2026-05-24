@@ -463,6 +463,7 @@ export function AdminPanel() {
                     <td className="p-5">
                       <div className="font-bold text-gray-900">{order.customerInfo.name}</div>
                       <div className="text-sm text-gray-600">{order.customerInfo.phone}</div>
+                      {order.customerInfo.email && <div className="text-xs text-[#2D5A27]">{order.customerInfo.email}</div>}
                       <div className="text-xs text-gray-500 mt-0.5 line-clamp-2 max-w-[200px]" title={order.customerInfo.address}>{order.customerInfo.address}</div>
                     </td>
                     <td className="p-5">
