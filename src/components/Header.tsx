@@ -66,21 +66,21 @@ export function Header({ view, setView }: { view: string, setView: (v: any) => v
                 </span>
                 <button 
                   onClick={() => logoutCustomer()}
-                  className="p-2 sm:px-3 sm:py-2 hover:bg-[#447A3C] rounded-full sm:rounded-lg transition-colors text-red-200 hover:text-red-100 flex items-center gap-1.5"
+                  className="px-2 py-1.5 sm:px-3 sm:py-2 hover:bg-[#447A3C] rounded-lg transition-colors text-red-200 hover:text-red-100 flex items-center gap-1.5"
                   title="Logout"
                 >
                   <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden sm:inline text-xs font-medium">Logout</span>
+                  <span className="text-xs font-medium">Logout</span>
                 </button>
               </div>
             ) : (
               <button 
                 onClick={() => loginCustomer()}
-                className="text-sm font-medium opacity-80 hover:opacity-100 flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 bg-[#3A6B34] hover:bg-[#447A3C] rounded-lg transition-colors border border-[#447A3C]"
+                className="text-xs sm:text-sm font-medium opacity-80 hover:opacity-100 flex items-center gap-1.5 px-2 py-1.5 sm:px-3 sm:py-2 bg-[#3A6B34] hover:bg-[#447A3C] rounded-lg transition-colors border border-[#447A3C]"
                 title="Sign in with Google"
               >
                 <User className="w-4 h-4" />
-                <span className="hidden sm:inline">Sign In</span>
+                <span>Sign In</span>
               </button>
             )}
 

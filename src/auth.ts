@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User, getRedirectResult } from 'firebase/auth';
+import { getAuth, signInWithPopup, signInWithRedirect, GoogleAuthProvider, onAuthStateChanged, User, getRedirectResult } from 'firebase/auth';
 import defaultFirebaseConfig from '../firebase-applet-config.json';
 
 const firebaseConfig = {
@@ -59,14 +59,21 @@ export const googleSignIn = async (isAdmin: boolean = false): Promise<void> => {
   try {
     isSigningIn = true;
     const provider = isAdmin ? adminProvider : customerProvider;
-    const result = await signInWithPopup(auth, provider);
-    if (result && result.providerId === adminProvider.providerId) {
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (credential?.accessToken) {
-        cachedAccessToken = credential.accessToken;
+    if (isAdmin) {
+      const result = await signInWithPopup(auth, provider);
+      if (result && result.providerId === adminProvider.providerId) {
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        if (credential?.accessToken) {
+          cachedAccessToken = credential.accessToken;
+        }
       }
+      isSigningIn = false;
+    } else {
+      // For customers (mostly on mobile), use redirect to avoid popup blocking
+      // or Facebook browser issues where popup doesn't return state properly.
+      await signInWithRedirect(auth, provider);
+      // It redirects, so the code below won't execute in the same session.
     }
-    isSigningIn = false;
   } catch (error: any) {
     console.error('Sign in error:', error);
     if (error.code === 'auth/unauthorized-domain') {
