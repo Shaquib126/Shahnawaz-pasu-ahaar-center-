@@ -59,25 +59,21 @@ export const googleSignIn = async (isAdmin: boolean = false): Promise<void> => {
   try {
     isSigningIn = true;
     const provider = isAdmin ? adminProvider : customerProvider;
-    if (isAdmin) {
-      const result = await signInWithPopup(auth, provider);
-      if (result && result.providerId === adminProvider.providerId) {
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        if (credential?.accessToken) {
-          cachedAccessToken = credential.accessToken;
-        }
+    
+    // Always use popup, redirect often fails in embedded browsers (like Facebook)
+    const result = await signInWithPopup(auth, provider);
+    
+    if (isAdmin && result && result.providerId === adminProvider.providerId) {
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        cachedAccessToken = credential.accessToken;
       }
-      isSigningIn = false;
-    } else {
-      // For customers (mostly on mobile), use redirect to avoid popup blocking
-      // or Facebook browser issues where popup doesn't return state properly.
-      await signInWithRedirect(auth, provider);
-      // It redirects, so the code below won't execute in the same session.
     }
+    isSigningIn = false;
   } catch (error: any) {
     console.error('Sign in error:', error);
-    if (error.code === 'auth/unauthorized-domain') {
-      alert('Sign in failed: unauthorized-domain.\n\nFIX FOR NETLIFY:\nYou have not added your Firebase config to Netlify Environment Variables, so the app is using the default test database.\n\nTo fix:\n1. Go to Netlify -> Site Settings -> Environment variables.\n2. Add VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, etc., from your Firebase project.\n3. IMPORTANT: Go to Deploys -> Trigger deploy -> Clear cache and deploy site.');
+    if (error.code === 'auth/unauthorized-domain' || error.code?.includes('api-key-not-valid')) {
+      alert(`Sign in failed: ${error.code}\n\nFIX FOR NETLIFY:\nYou need to add your Firebase config to Netlify Environment Variables.\n\nTo fix:\n1. Go to Netlify -> Site Settings -> Environment variables.\n2. Add VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, etc., from your Firebase project.\n3. IMPORTANT: Go to Deploys -> Trigger deploy -> Clear cache and deploy site.`);
     } else {
       alert('Sign in failed: ' + error.message);
     }

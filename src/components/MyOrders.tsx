@@ -374,8 +374,47 @@ export function MyOrders({ setView }: MyOrdersProps) {
                     </div>
                   </div>
 
+                  {/* Order Progress Stepper */}
+                  <div className="mt-5 pt-5 border-t border-[#EEF2EC] dark:border-slate-800">
+                    <div className="relative flex items-center justify-between w-full mb-4 px-2">
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-200 dark:bg-slate-700 rounded-full" />
+                      <div className={`absolute left-0 top-1/2 -translate-y-1/2 h-1 rounded-full transition-all duration-500 ${
+                        order.status === 'Delivered' ? 'w-full bg-green-500' : 
+                        order.status === 'Processing' ? 'w-1/2 bg-blue-500' : 
+                        'w-[2%]'
+                      } ${order.status === 'Pending Payment' ? 'bg-yellow-500' : ''}`} />
+                      
+                      <div className="relative z-10 flex flex-col items-center">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs shadow-sm ${
+                          ['Pending Payment', 'Processing', 'Delivered'].includes(order.status) ? 'bg-yellow-500' : 'bg-gray-300 dark:bg-slate-600 text-gray-500'
+                        }`}>
+                          1
+                        </div>
+                        <span className="text-[10px] font-bold text-gray-700 dark:text-slate-300 mt-1.5 uppercase tracking-wide">Pending</span>
+                      </div>
+
+                      <div className="relative z-10 flex flex-col items-center">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs shadow-sm ${
+                          ['Processing', 'Delivered'].includes(order.status) ? 'bg-blue-500' : 'bg-gray-300 dark:bg-slate-600 text-gray-500'
+                        }`}>
+                          2
+                        </div>
+                        <span className="text-[10px] font-bold text-gray-700 dark:text-slate-300 mt-1.5 uppercase tracking-wide">Processing</span>
+                      </div>
+
+                      <div className="relative z-10 flex flex-col items-center">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs shadow-sm ${
+                          order.status === 'Delivered' ? 'bg-green-500' : 'bg-gray-300 dark:bg-slate-600 text-gray-500'
+                        }`}>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-[10px] font-bold text-gray-700 dark:text-slate-300 mt-1.5 uppercase tracking-wide">Delivered</span>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Status Indicator Bar */}
-                  <div className="mt-4 pt-4 border-t border-[#EEF2EC] dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-gray-500">
+                  <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-gray-500">
                     <div className="flex items-center gap-2">
                       {order.status === 'Delivered' ? (
                         <>
