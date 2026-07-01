@@ -37,8 +37,8 @@ export function Shop() {
               onClick={() => setActiveTab(cat.id)}
               className={`px-5 sm:px-6 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-all ${
                 activeTab === cat.id 
-                  ? 'bg-[#2D5A27] text-white shadow-md' 
-                  : 'bg-white text-[#2D5A27] border border-[#DCE4D8] hover:bg-[#F0F4EF]'
+                  ? 'bg-[#2D5A27] text-white shadow-md dark:bg-emerald-600 dark:text-white' 
+                  : 'bg-white text-[#2D5A27] border border-[#DCE4D8] hover:bg-[#F0F4EF] dark:bg-slate-900 dark:text-[#A5C09D] dark:border-slate-800 dark:hover:bg-slate-800'
               }`}
             >
               {t(cat.labelKey as any)}
@@ -56,7 +56,7 @@ export function Shop() {
             placeholder={t('search_placeholder' as any)}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-9 py-2 bg-white border border-[#DCE4D8] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent text-sm transition-all shadow-sm text-gray-800 placeholder-gray-400"
+            className="w-full pl-10 pr-9 py-2 bg-white border border-[#DCE4D8] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent text-sm transition-all shadow-sm text-gray-800 placeholder-gray-400 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 dark:focus:ring-emerald-500 dark:placeholder-slate-500"
           />
           {searchQuery && (
             <button
@@ -73,11 +73,11 @@ export function Shop() {
       {/* Product Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredProducts.map(product => (
-          <div key={product.id} className={`bg-white rounded-2xl border border-[#E1E8DE] p-4 flex flex-col gap-3 shadow-sm transition-all duration-300 ${product.stock === 0 ? 'opacity-75 grayscale' : ''}`}>
+          <div key={product.id} className={`bg-white dark:bg-slate-900 rounded-2xl border border-[#E1E8DE] dark:border-slate-800/85 p-4 flex flex-col gap-3 shadow-sm transition-all duration-300 ${product.stock === 0 ? 'opacity-75 grayscale' : ''}`}>
             {/* Placeholder Image Area */}
             <div 
               onClick={() => setZoomedProduct(product)}
-              className={`w-full h-32 rounded-xl flex items-center justify-center relative overflow-hidden cursor-pointer group select-none ${product.stock === 0 ? 'bg-[#F0F0F0]' : 'bg-[#E9F0E6]'}`}
+              className={`w-full h-32 rounded-xl flex items-center justify-center relative overflow-hidden cursor-pointer group select-none ${product.stock === 0 ? 'bg-[#F0F0F0] dark:bg-slate-800/60' : 'bg-[#E9F0E6] dark:bg-slate-950/70'}`}
               title="Click to view larger image"
             >
               {product.imageUrl ? (
@@ -106,19 +106,19 @@ export function Shop() {
               )}
             </div>
             
-            <div className="flex-1 flex flex-col bg-white z-10 relative mt-1">
-              <span className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${product.stock === 0 ? 'text-gray-400' : 'text-[#2D5A27]'}`}>
+            <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 z-10 relative mt-1">
+              <span className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${product.stock === 0 ? 'text-gray-400' : 'text-[#2D5A27] dark:text-emerald-400'}`}>
                 {t(product.category.toLowerCase() as any)}
               </span>
-              <h3 className={`text-lg font-bold mb-1 line-clamp-2 leading-tight ${product.stock === 0 ? 'text-gray-500' : 'text-gray-900'}`} title={product.name}>
+              <h3 className={`text-lg font-bold mb-1 line-clamp-2 leading-tight ${product.stock === 0 ? 'text-gray-400' : 'text-gray-900 dark:text-slate-100'}`} title={product.name}>
                 {product.name}
               </h3>
-              <p className={`text-xs flex-1 line-clamp-3 mb-4 leading-relaxed ${product.stock === 0 ? 'text-gray-400' : 'text-gray-500'}`}>
+              <p className={`text-xs flex-1 line-clamp-3 mb-4 leading-relaxed ${product.stock === 0 ? 'text-gray-400' : 'text-gray-500 dark:text-slate-300'}`}>
                 {product.description}
               </p>
               
               <div className="flex items-center justify-between mt-auto">
-                <span className={`text-xl font-bold flex items-baseline ${product.stock === 0 ? 'text-gray-400' : 'text-[#2D5A27]'}`}>
+                <span className={`text-xl font-bold flex items-baseline ${product.stock === 0 ? 'text-gray-400' : 'text-[#2D5A27] dark:text-emerald-400'}`}>
                   ₹{product.price}
                 </span>
                 
@@ -143,9 +143,9 @@ export function Shop() {
           </div>
         ))}
         {filteredProducts.length === 0 && (
-          <div className="col-span-full py-16 text-center text-gray-500 bg-white rounded-xl border border-dashed border-gray-300">
-            <div className="mx-auto w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-              <Leaf className="h-8 w-8 text-gray-300" />
+          <div className="col-span-full py-16 text-center text-gray-500 bg-white dark:bg-slate-900 rounded-xl border border-dashed border-gray-300 dark:border-slate-800">
+            <div className="mx-auto w-16 h-16 bg-gray-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+              <Leaf className="h-8 w-8 text-gray-300 dark:text-slate-600" />
             </div>
             <p className="text-lg">
               {searchQuery ? t('no_results_found' as any) : (language === 'hi' ? 'इस श्रेणी में कोई उत्पाद नहीं मिला।' : 'No products found in this category.')}
@@ -161,7 +161,7 @@ export function Shop() {
           onClick={() => setZoomedProduct(null)}
         >
           <div 
-            className="bg-white rounded-2xl overflow-hidden max-w-lg w-full shadow-2xl relative border border-[#E1E8DE] animate-scale-up"
+            className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden max-w-lg w-full shadow-2xl relative border border-[#E1E8DE] dark:border-slate-800 animate-scale-up"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}
@@ -177,13 +177,13 @@ export function Shop() {
             <div className="w-full h-1.5 bg-[#2D5A27]" />
 
             {/* Display Image Area */}
-            <div className={`w-full h-64 sm:h-80 flex items-center justify-center relative bg-[#E9F0E6] overflow-hidden`}>
+            <div className="w-full h-64 sm:h-80 flex items-center justify-center relative bg-[#E9F0E6] dark:bg-slate-950/60 overflow-hidden">
               {zoomedProduct.imageUrl ? (
                 <img 
                   src={zoomedProduct.imageUrl} 
                   alt={zoomedProduct.name} 
                   className="w-full h-full object-contain" 
-                />
+                  />
               ) : (
                 <div className="flex flex-col items-center gap-3">
                   <IconMapper 
@@ -208,20 +208,20 @@ export function Shop() {
 
             {/* Full Details Panel */}
             <div className="p-6">
-              <span className="text-xs font-bold uppercase tracking-widest text-[#2D5A27] bg-[#E9F0E6] px-2.5 py-1 rounded-md">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#2D5A27] bg-[#E9F0E6] dark:text-emerald-400 dark:bg-emerald-950/45 px-2.5 py-1 rounded-md">
                 {t(zoomedProduct.category.toLowerCase() as any)}
               </span>
-              <h2 className="text-xl sm:text-2xl font-bold mt-3 text-gray-900 leading-snug">
+              <h2 className="text-xl sm:text-2xl font-bold mt-3 text-gray-900 dark:text-slate-100 leading-snug">
                 {zoomedProduct.name}
               </h2>
-              <p className="text-sm text-gray-600 mt-2.5 leading-relaxed whitespace-pre-line max-h-32 overflow-y-auto pr-1">
+              <p className="text-sm text-gray-600 dark:text-slate-300 mt-2.5 leading-relaxed whitespace-pre-line max-h-32 overflow-y-auto pr-1">
                 {zoomedProduct.description}
               </p>
 
-              <div className="flex items-center justify-between border-t border-gray-100 pt-5 mt-5">
+              <div className="flex items-center justify-between border-t border-gray-100 dark:border-slate-800 pt-5 mt-5">
                 <div>
                   <span className="text-xs text-gray-400 uppercase tracking-wider block">Price</span>
-                  <span className="text-2xl font-bold text-[#2D5A27] flex items-baseline">
+                  <span className="text-2xl font-bold text-[#2D5A27] dark:text-emerald-400 flex items-baseline">
                     ₹{zoomedProduct.price}
                   </span>
                 </div>

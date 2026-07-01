@@ -1,6 +1,15 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithRedirect, GoogleAuthProvider, onAuthStateChanged, User, getRedirectResult } from 'firebase/auth';
-import firebaseConfig from '../firebase-applet-config.json';
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User, getRedirectResult } from 'firebase/auth';
+import defaultFirebaseConfig from '../firebase-applet-config.json';
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || defaultFirebaseConfig.apiKey,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || defaultFirebaseConfig.authDomain,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || defaultFirebaseConfig.projectId,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || defaultFirebaseConfig.storageBucket,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || defaultFirebaseConfig.messagingSenderId,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || defaultFirebaseConfig.appId,
+};
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -38,12 +47,7 @@ export const initAuth = (
 
   return onAuthStateChanged(auth, async (user: User | null) => {
     if (user) {
-      if (cachedAccessToken || !isSigningIn) {
-        if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken);
-      } else if (!isSigningIn) {
-        cachedAccessToken = null;
-        if (onAuthFailure) onAuthFailure();
-      }
+      if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken);
     } else {
       cachedAccessToken = null;
       if (onAuthFailure) onAuthFailure();
@@ -55,10 +59,21 @@ export const googleSignIn = async (isAdmin: boolean = false): Promise<void> => {
   try {
     isSigningIn = true;
     const provider = isAdmin ? adminProvider : customerProvider;
-    await signInWithRedirect(auth, provider);
+    const result = await signInWithPopup(auth, provider);
+    if (result && result.providerId === adminProvider.providerId) {
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        cachedAccessToken = credential.accessToken;
+      }
+    }
+    isSigningIn = false;
   } catch (error: any) {
     console.error('Sign in error:', error);
-    alert('Sign in failed: ' + error.message);
+    if (error.code === 'auth/unauthorized-domain') {
+      alert('Sign in failed: unauthorized-domain.\n\nFIX FOR NETLIFY:\nYou have not added your Firebase config to Netlify Environment Variables, so the app is using the default test database.\n\nTo fix:\n1. Go to Netlify -> Site Settings -> Environment variables.\n2. Add VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, etc., from your Firebase project.\n3. IMPORTANT: Go to Deploys -> Trigger deploy -> Clear cache and deploy site.');
+    } else {
+      alert('Sign in failed: ' + error.message);
+    }
     isSigningIn = false;
     throw error;
   }

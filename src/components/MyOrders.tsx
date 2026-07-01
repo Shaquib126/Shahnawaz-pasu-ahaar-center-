@@ -8,7 +8,7 @@ interface MyOrdersProps {
 }
 
 export function MyOrders({ setView }: MyOrdersProps) {
-  const { currentUser, loginCustomer, products, t, language, cancelOrder } = useStore();
+  const { currentUser, loginCustomer, logoutCustomer, products, t, language, cancelOrder } = useStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -177,12 +177,12 @@ export function MyOrders({ setView }: MyOrdersProps) {
   if (!currentUser) {
     return (
       <div className="max-w-md mx-auto py-16 px-4 text-center animate-fade-in">
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-[#E1E8DE] flex flex-col items-center">
-          <div className="w-16 h-16 bg-[#E9F0E6] rounded-full flex items-center justify-center text-[#2D5A27] mb-6">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-sm border border-[#E1E8DE] dark:border-slate-800 flex flex-col items-center">
+          <div className="w-16 h-16 bg-[#E9F0E6] dark:bg-slate-800 rounded-full flex items-center justify-center text-[#2D5A27] dark:text-emerald-400 mb-6 font-bold">
             <ShoppingBag className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Track Your Orders</h2>
-          <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-2">Track Your Orders</h2>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mb-6 leading-relaxed">
             Please sign in with your Google Account to view your order history, delivery progress, and invoices in real-time.
           </p>
           <button
@@ -209,23 +209,31 @@ export function MyOrders({ setView }: MyOrdersProps) {
         <div>
           <button
             onClick={() => setView('shop')}
-            className="text-xs font-bold text-[#2D5A27] hover:text-[#1E3B1A] flex items-center gap-1 mb-2 group transition-colors"
+            className="text-xs font-bold text-[#2D5A27] dark:text-emerald-400 hover:text-[#1E3B1A] dark:hover:text-emerald-300 flex items-center gap-1 mb-2 group transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
             <span>Continue Shopping</span>
           </button>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-slate-100">
             My Orders
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Logged in as <span className="font-semibold text-gray-700">{currentUser.email}</span>
-          </p>
+          <div className="flex items-center gap-3 mt-2">
+            <p className="text-sm text-gray-500 dark:text-slate-400">
+              Logged in as <span className="font-semibold text-gray-700 dark:text-slate-350">{currentUser.email}</span>
+            </p>
+            <button
+              onClick={() => logoutCustomer()}
+              className="text-xs px-2.5 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-md transition-colors border border-red-100 font-semibold"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         <button
           onClick={fetchUserOrders}
           disabled={loading}
-          className="self-start sm:self-center flex items-center gap-2 px-4 py-2 bg-white border border-[#DCE4D8] hover:bg-[#F4F7F2] text-gray-700 font-bold text-xs rounded-xl transition-all shadow-sm disabled:opacity-55"
+          className="self-start sm:self-center flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-[#DCE4D8] dark:border-slate-800 hover:bg-[#F4F7F2] dark:hover:bg-slate-800/80 text-gray-700 dark:text-slate-300 font-bold text-xs rounded-xl transition-all shadow-sm disabled:opacity-55"
         >
           <RefreshCw className={`w-3.5 h-3.5 text-gray-500 ${loading ? 'animate-spin' : ''}`} />
           <span>Refresh Updates</span>
@@ -258,12 +266,12 @@ export function MyOrders({ setView }: MyOrdersProps) {
 
       {/* Orders List Container */}
       {!loading && orders.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-3xl border border-[#E1E8DE] p-8 shadow-sm">
-          <div className="mx-auto w-12 h-12 bg-[#F4F7F2] rounded-full flex items-center justify-center mb-4">
-            <ShoppingBag className="h-6 w-6 text-[#A5C09D]" />
+        <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-[#E1E8DE] dark:border-slate-800 p-8 shadow-sm">
+          <div className="mx-auto w-12 h-12 bg-[#F4F7F2] dark:bg-slate-850 rounded-full flex items-center justify-center mb-4">
+            <ShoppingBag className="h-6 w-6 text-[#A5C09D] dark:text-emerald-500" />
           </div>
-          <h3 className="text-lg font-bold text-gray-800">No Orders Found</h3>
-          <p className="text-sm text-gray-500 max-w-sm mx-auto mt-2 leading-relaxed">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-slate-200">No Orders Found</h3>
+          <p className="text-sm text-gray-500 dark:text-slate-400 max-w-sm mx-auto mt-2 leading-relaxed">
             We couldn't find any orders matching <span className="font-semibold">{currentUser.email}</span>. Please place an order using this email at checkout.
           </p>
           <button
@@ -276,21 +284,21 @@ export function MyOrders({ setView }: MyOrdersProps) {
       ) : (
         <div className="space-y-6">
           {orders.map((order) => (
-            <div key={order.id} className="bg-white rounded-2xl border border-[#E1E8DE] shadow-sm overflow-hidden transition-all hover:shadow-md">
+            <div key={order.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-[#E1E8DE] dark:border-slate-800/85 shadow-sm overflow-hidden transition-all hover:shadow-md">
               {/* Order Header Block */}
-              <div className="bg-[#FAFBF9] border-b border-[#E1E8DE] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm">
+              <div className="bg-[#FAFBF9] dark:bg-slate-850/50 border-b border-[#E1E8DE] dark:border-slate-800/80 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-gray-900 text-base">#{order.id}</span>
+                    <span className="font-bold text-gray-900 dark:text-slate-100 text-base">#{order.id}</span>
                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                      order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
-                      order.status === 'Processing' ? 'bg-blue-100 text-blue-800' :
-                      'bg-yellow-100 text-yellow-800'
+                      order.status === 'Delivered' ? 'bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300' :
+                      order.status === 'Processing' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300' :
+                      'bg-yellow-105 text-yellow-800 dark:bg-amber-955/40 dark:text-amber-300 bg-yellow-105/10 bg-yellow-100 text-yellow-900'
                     }`}>
                       {order.status}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-gray-500 text-xs">
+                  <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-xs">
                     <Calendar className="w-3.5 h-3.5" />
                     <span>{new Date(order.date).toLocaleString()}</span>
                   </div>
@@ -298,12 +306,12 @@ export function MyOrders({ setView }: MyOrdersProps) {
 
                 <div className="flex items-center gap-3 self-end sm:self-center">
                   <div className="text-right">
-                    <span className="text-gray-400 text-xs block">Order Total</span>
-                    <span className="font-bold text-[#2D5A27] text-base leading-none">₹{order.totalAmount.toLocaleString()}</span>
+                    <span className="text-gray-400 dark:text-gray-500 text-xs block">Order Total</span>
+                    <span className="font-bold text-[#2D5A27] dark:text-emerald-400 text-base leading-none">₹{order.totalAmount.toLocaleString()}</span>
                   </div>
                   <button
                     onClick={() => handlePrint(order)}
-                    className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-800 transition-all border border-gray-100 hover:border-gray-300"
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-gray-500 hover:text-gray-800 dark:hover:text-slate-200 transition-all border border-gray-100 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700"
                     title="Print Invoice / Summary"
                   >
                     <Printer className="w-4 h-4" />
@@ -320,20 +328,20 @@ export function MyOrders({ setView }: MyOrdersProps) {
                     {order.items.map((item, idx) => {
                       const prod = products.find(p => p.id === item.productId);
                       return (
-                        <div key={`${item.productId}-${idx}`} className="py-2.5 flex justify-between items-center text-xs">
+                        <div key={`${item.productId}-${idx}`} className="py-2.5 flex justify-between items-center text-xs border-b border-gray-100/50 dark:border-slate-800">
                           <div className="flex-1 min-w-0 pr-3">
-                            <span className="font-semibold text-gray-900 truncate block">
+                            <span className="font-semibold text-gray-900 dark:text-slate-200 truncate block">
                               {prod ? prod.name : `Product ID: ${item.productId}`}
                             </span>
-                            <span className="text-gray-400 text-[10px] uppercase">
+                            <span className="text-gray-400 dark:text-slate-400 text-[10px] uppercase">
                               {prod ? t(prod.category.toLowerCase() as any) : ''}
                             </span>
                           </div>
                           <div className="text-right flex-shrink-0">
-                            <div className="font-semibold text-gray-800">
+                            <div className="font-semibold text-gray-800 dark:text-slate-300">
                               {item.quantity} × ₹{(prod?.price || 0).toLocaleString()}
                             </div>
-                            <div className="text-gray-400 text-[10px]">
+                            <div className="text-gray-400 dark:text-slate-500 text-[10px]">
                               ₹{((prod?.price || 0) * item.quantity).toLocaleString()}
                             </div>
                           </div>
@@ -344,45 +352,45 @@ export function MyOrders({ setView }: MyOrdersProps) {
                 </div>
 
                 {/* Shipping info */}
-                <div className="bg-[#FAFBF9] rounded-xl p-4 border border-[#ECEFEA] flex flex-col justify-between">
+                <div className="bg-[#FAFBF9] dark:bg-slate-850/60 rounded-xl p-4 border border-[#ECEFEA] dark:border-slate-800 flex flex-col justify-between">
                   <div>
-                    <h3 className="font-bold text-xs text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-[#2D5A27]" />
+                    <h3 className="font-bold text-xs text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-[#2D5A27] dark:text-emerald-400" />
                       <span>Delivery Details</span>
                     </h3>
                     <div className="space-y-2 text-xs">
                       <div>
-                        <span className="text-gray-400 block">Recipient Name</span>
-                        <span className="font-bold text-gray-800">{order.customerInfo.name}</span>
+                        <span className="text-gray-400 dark:text-slate-505 block">Recipient Name</span>
+                        <span className="font-bold text-gray-800 dark:text-slate-200">{order.customerInfo.name}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Phone className="w-3 h-3 text-gray-400" />
-                        <span className="font-medium text-gray-700">{order.customerInfo.phone}</span>
+                        <span className="font-medium text-gray-700 dark:text-slate-300">{order.customerInfo.phone}</span>
                       </div>
                       <div>
-                        <span className="text-gray-400 block">Shipping Location</span>
-                        <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{order.customerInfo.address}</p>
+                        <span className="text-gray-400 dark:text-slate-505 block">Shipping Location</span>
+                        <p className="text-gray-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">{order.customerInfo.address}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Status Indicator Bar */}
-                  <div className="mt-4 pt-4 border-t border-[#EEF2EC] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-gray-500">
+                  <div className="mt-4 pt-4 border-t border-[#EEF2EC] dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-gray-500">
                     <div className="flex items-center gap-2">
                       {order.status === 'Delivered' ? (
                         <>
                           <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                          <span className="font-medium text-gray-700 text-[11px]">Delivered successfully. Keep animals healthy!</span>
+                          <span className="font-medium text-gray-700 dark:text-slate-300 text-[11px]">Delivered successfully. Keep animals healthy!</span>
                         </>
                       ) : order.status === 'Processing' ? (
                         <>
                           <Clock className="w-4 h-4 text-blue-600 animate-pulse flex-shrink-0" />
-                          <span className="font-medium text-gray-700 text-[11px]">Cattle feed is being packed and dispatched.</span>
+                          <span className="font-medium text-gray-700 dark:text-slate-300 text-[11px]">Cattle feed is being packed and dispatched.</span>
                         </>
                       ) : (
                         <>
                           <Clock className="w-4 h-4 text-yellow-600 flex-shrink-0" />
-                          <span className="font-medium text-gray-700 text-[11px]">Awaiting UPI verification or cash collection.</span>
+                          <span className="font-medium text-gray-700 dark:text-slate-300 text-[11px]">Awaiting UPI verification or cash collection.</span>
                         </>
                       )}
                     </div>

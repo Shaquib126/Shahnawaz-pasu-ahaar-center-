@@ -332,10 +332,10 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
   if (cartItems.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 animate-fade-in">
-        <div className="bg-white rounded-full p-8 shadow-sm border border-gray-100 mb-6">
-          <ShoppingCart className="h-20 w-20 text-gray-300" />
+        <div className="bg-white dark:bg-slate-900 rounded-full p-8 shadow-sm border border-gray-100 dark:border-slate-800 mb-6">
+          <ShoppingCart className="h-20 w-20 text-gray-300 dark:text-slate-600" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">{t('empty_cart')}</h2>
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-slate-100 mb-6">{t('empty_cart')}</h2>
         <button 
           onClick={() => setView('shop')}
           className="bg-[#2D5A27] hover:bg-[#23471E] text-white font-medium px-6 py-3 rounded-xl transition-all shadow-sm flex items-center space-x-2"
@@ -353,20 +353,20 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
         <div className="flex items-center space-x-4">
           <button 
             onClick={() => setView('shop')}
-            className="p-2 hover:bg-white rounded-full transition-colors border border-transparent hover:border-gray-200"
+            className="p-2 hover:bg-white dark:hover:bg-slate-900 rounded-full transition-colors border border-transparent hover:border-gray-200"
           >
-            <ArrowLeft className="h-6 w-6 text-gray-600" />
+            <ArrowLeft className="h-6 w-6 text-gray-650 dark:text-gray-400" />
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">{t('cart')}</h1>
+          <h1 className="text-3xl font-bold text-gray-905 dark:text-slate-100">{t('cart')}</h1>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-[#E1E8DE] overflow-hidden">
-        <ul className="divide-y divide-[#E1E8DE]">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-[#E1E8DE] dark:border-slate-800 overflow-hidden">
+        <ul className="divide-y divide-[#E1E8DE] dark:divide-slate-800">
           {cartItems.map((item) => (
-            <li key={item.productId} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+            <li key={item.productId} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5 dark:border-slate-800">
               <div className="flex items-center space-x-4 flex-1 group">
-                <div className="h-16 w-16 bg-[#F4F7F2] rounded-lg flex items-center justify-center flex-shrink-0 border border-transparent group-hover:border-[#DCE4D8] transition-colors overflow-hidden">
+                <div className="h-16 w-16 bg-[#F4F7F2] dark:bg-slate-800 rounded-lg flex items-center justify-center flex-shrink-0 border border-transparent group-hover:border-[#DCE4D8] dark:group-hover:border-slate-700 transition-colors overflow-hidden">
                   {item.product.imageUrl ? (
                     <img src={item.product.imageUrl} alt={item.product.name} className="w-full h-full object-cover" />
                   ) : (
@@ -374,32 +374,32 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
                   )}
                 </div>
                 <div>
-                  <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-1 leading-tight">{item.product.name}</h3>
-                  <div className="text-[11px] text-gray-500">
+                  <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-slate-200 mb-1 leading-tight">{item.product.name}</h3>
+                  <div className="text-[11px] text-gray-500 dark:text-slate-400">
                     ₹{item.product.price} x {item.quantity}
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center justify-between w-full sm:w-auto gap-4 sm:gap-6">
-                <div className="flex items-center border border-[#DCE4D8] rounded bg-white">
+                <div className="flex items-center border border-[#DCE4D8] dark:border-slate-700 rounded bg-white dark:bg-slate-850">
                   <button 
                     onClick={() => updateCartQuantity(item.productId, item.quantity - 1)}
-                    className="px-3 py-1.5 text-xs hover:bg-[#F4F7F2] rounded-l transition-all font-medium"
+                    className="px-3 py-1.5 text-xs hover:bg-[#F4F7F2] dark:hover:bg-slate-800 rounded-l transition-all font-medium text-gray-705 dark:text-slate-300"
                   >
                     <Minus className="h-4 w-4" />
                   </button>
-                  <span className="w-8 text-center font-bold text-gray-800 text-xs">{item.quantity}</span>
+                  <span className="w-8 text-center font-bold text-gray-800 dark:text-slate-200 text-xs">{item.quantity}</span>
                   <button 
                     onClick={() => updateCartQuantity(item.productId, item.quantity + 1)}
                     disabled={item.quantity >= item.product.stock}
-                    className="px-3 py-1.5 text-xs hover:bg-[#F4F7F2] rounded-r transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+                    className="px-3 py-1.5 text-xs hover:bg-[#F4F7F2] dark:hover:bg-slate-800 rounded-r transition-all text-gray-705 dark:text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent"
                   >
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
 
-                <div className="text-base font-bold text-gray-900 w-20 text-right">
+                <div className="text-base font-bold text-gray-900 dark:text-slate-100 w-20 text-right">
                   ₹{item.product.price * item.quantity}
                 </div>
 
@@ -414,17 +414,17 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
           ))}
         </ul>
 
-        <div className="bg-[#F9FBF8] p-6 sm:p-8 border-t border-[#E1E8DE] flex flex-col sm:flex-row justify-between items-start gap-8">
+        <div className="bg-[#F9FBF8] dark:bg-slate-900/40 p-6 sm:p-8 border-t border-[#E1E8DE] dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start gap-8">
           <div className="w-full sm:w-auto min-w-[240px]">
             <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-500">Subtotal</span>
-              <span className="font-medium text-gray-800">₹{subtotal.toLocaleString()}</span>
+              <span className="text-gray-500 dark:text-slate-400">Subtotal</span>
+              <span className="font-medium text-gray-800 dark:text-slate-200">₹{subtotal.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between text-sm mb-4 pb-4 border-b border-[#DCE4D8]">
-              <span className="text-gray-500 flex items-center gap-1.5"><Truck className="w-4 h-4"/> Delivery Fee</span>
-              <span className="font-medium text-gray-800">₹{deliveryFee}</span>
+            <div className="flex justify-between text-sm mb-4 pb-4 border-b border-[#DCE4D8] dark:border-slate-800">
+              <span className="text-gray-500 dark:text-slate-400 flex items-center gap-1.5"><Truck className="w-4 h-4"/> Delivery Fee</span>
+              <span className="font-medium text-gray-800 dark:text-slate-200">₹{deliveryFee}</span>
             </div>
-            <div className="flex justify-between text-xl font-bold text-[#2D5A27] mb-2">
+            <div className="flex justify-between text-xl font-bold text-[#2D5A27] dark:text-emerald-400 mb-2">
               <span>{t('total')}</span>
               <span>₹{total.toLocaleString()}</span>
             </div>
@@ -482,12 +482,12 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
 
       {showConfirmModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900">Confirm Your Order</h2>
+          <div className="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-850">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100">Confirm Your Order</h2>
               <button 
                 onClick={() => setShowConfirmModal(false)}
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-full transition-colors"
+                className="p-2 text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200 rounded-full transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -495,46 +495,46 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
             
             <div className="p-6 overflow-y-auto w-full">
               <div className="mb-6">
-                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Delivery Details</h3>
-                <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm text-gray-700">
-                  <p><span className="font-semibold text-gray-900">Name:</span> {deliveryDetails.name}</p>
-                  <p><span className="font-semibold text-gray-900">Email:</span> {deliveryDetails.email}</p>
-                  <p><span className="font-semibold text-gray-900">Phone:</span> {deliveryDetails.phone}</p>
-                  <p><span className="font-semibold text-gray-900">Address:</span> {deliveryDetails.address}</p>
+                <h3 className="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">Delivery Details</h3>
+                <div className="bg-gray-50 dark:bg-slate-950/40 rounded-lg p-4 space-y-2 text-sm text-gray-700 dark:text-slate-300">
+                  <p><span className="font-semibold text-gray-900 dark:text-slate-205">Name:</span> {deliveryDetails.name}</p>
+                  <p><span className="font-semibold text-gray-900 dark:text-slate-205">Email:</span> {deliveryDetails.email}</p>
+                  <p><span className="font-semibold text-gray-900 dark:text-slate-205">Phone:</span> {deliveryDetails.phone}</p>
+                  <p><span className="font-semibold text-gray-900 dark:text-slate-205">Address:</span> {deliveryDetails.address}</p>
                 </div>
               </div>
 
               <div>
-                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Order Summary</h3>
-                <div className="bg-gray-50 rounded-lg p-4 text-sm">
+                <h3 className="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">Order Summary</h3>
+                <div className="bg-gray-50 dark:bg-slate-950/40 rounded-lg p-4 text-sm text-gray-700 dark:text-slate-300">
                   <ul className="space-y-3 mb-4">
                     {cartItems.map((item) => (
-                      <li key={item.productId} className="flex justify-between text-gray-700">
+                      <li key={item.productId} className="flex justify-between text-gray-700 dark:text-slate-300">
                         <span className="flex-1 pr-4">{item.quantity}x {item.product.name}</span>
-                        <span className="font-medium text-gray-900">₹{item.product.price * item.quantity}</span>
+                        <span className="font-medium text-gray-900 dark:text-slate-100">₹{item.product.price * item.quantity}</span>
                       </li>
                     ))}
                   </ul>
-                  <div className="pt-3 border-t border-gray-200 flex justify-between text-gray-700 mb-2">
+                  <div className="pt-3 border-t border-gray-200 dark:border-slate-800 flex justify-between text-gray-700 dark:text-slate-300 mb-2">
                     <span>Subtotal</span>
                     <span>₹{subtotal}</span>
                   </div>
-                  <div className="flex justify-between text-gray-700 mb-3 pb-3 border-b border-gray-200">
+                  <div className="flex justify-between text-gray-700 dark:text-slate-300 mb-3 pb-3 border-b border-gray-200 dark:border-slate-800">
                     <span>Delivery Fee</span>
                     <span>₹{deliveryFee}</span>
                   </div>
-                  <div className="flex justify-between items-center bg-[#E9F0E6] p-3 rounded-lg">
-                    <span className="font-bold text-[#2D5A27] text-base">Total Payment</span>
-                    <span className="font-bold text-[#2D5A27] text-lg">₹{total}</span>
+                  <div className="flex justify-between items-center bg-[#E9F0E6] dark:bg-emerald-950/40 p-3 rounded-lg">
+                    <span className="font-bold text-[#2D5A27] dark:text-emerald-400 text-base">Total Payment</span>
+                    <span className="font-bold text-[#2D5A27] dark:text-emerald-400 text-lg">₹{total}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-100 flex gap-3">
+            <div className="p-6 border-t border-gray-100 dark:border-slate-800 flex gap-3">
               <button 
                 onClick={() => setShowConfirmModal(false)}
-                className="flex-1 py-3 px-4 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl font-bold transition-colors"
+                className="flex-1 py-3 px-4 bg-white dark:bg-slate-850 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-slate-300 border border-gray-205 dark:border-slate-700 rounded-xl font-bold transition-colors"
               >
                 Cancel
               </button>
@@ -565,9 +565,9 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
 
       {showUpiModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl w-full max-w-sm shadow-xl overflow-hidden flex flex-col items-center p-6 text-center">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Scan to Pay</h2>
-            <p className="text-gray-500 mb-6 text-sm">Please scan this QR code with any UPI app to complete your payment.</p>
+          <div className="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl w-full max-w-sm shadow-xl overflow-hidden flex flex-col items-center p-6 text-center">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-2">Scan to Pay</h2>
+            <p className="text-gray-500 dark:text-slate-400 mb-6 text-sm">Please scan this QR code with any UPI app to complete your payment.</p>
             
             <div className="bg-white p-4 rounded-xl shadow-inner border border-gray-100 mb-6">
               <QRCodeSVG 
@@ -578,7 +578,7 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
               />
             </div>
             
-            <div className="text-2xl font-bold text-[#2D5A27] mb-6">₹{total}</div>
+            <div className="text-2xl font-bold text-[#2D5A27] dark:text-emerald-400 mb-6">₹{total}</div>
 
             <div className="flex flex-col gap-3 w-full">
               <a 
@@ -589,14 +589,14 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
               </a>
               <button 
                 onClick={finalizeOrder}
-                className="w-full py-3 px-4 bg-[#F4F7F2] hover:bg-[#E1E8DE] text-[#2D5A27] border border-[#DCE4D8] rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 bg-[#F4F7F2] dark:bg-slate-800 hover:bg-[#E1E8DE] dark:hover:bg-slate-750 text-[#2D5A27] dark:text-emerald-400 border border-[#DCE4D8] dark:border-slate-700 rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
               >
                 <CheckCircle2 className="w-5 h-5" />
                 I've made the payment
               </button>
               <button 
                 onClick={() => setShowUpiModal(false)}
-                className="w-full py-2 text-gray-500 hover:text-gray-700 font-medium text-sm transition-colors mt-2"
+                className="w-full py-2 text-gray-500 hover:text-gray-750 dark:text-slate-450 dark:hover:text-slate-205 font-medium text-sm transition-colors mt-2"
               >
                 Cancel and go back
               </button>

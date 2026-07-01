@@ -7,8 +7,17 @@ import { initAuth, googleSignIn, logout, getAccessToken } from '../auth';
 export function AdminPanel() {
   const { products, orders, addProduct, updateProduct, deleteProduct, updateOrderStatus, adminProfilePic, setAdminProfilePic, changeAdminPassword, t } = useStore();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'workspace' | 'settings'>('dashboard');
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Pending Payment' | 'Processing' | 'Delivered'>('All');
   
   const [newPassword, setNewPassword] = useState('');
+
+  const filteredOrders = orders.filter(order => {
+    if (statusFilter === 'All') return true;
+    if (statusFilter === 'Pending Payment') {
+      return order.status === 'Pending Payment' || order.status === 'Pending';
+    }
+    return order.status === statusFilter;
+  });
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -209,17 +218,17 @@ export function AdminPanel() {
           <label className="cursor-pointer group relative flex-shrink-0">
             <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
             {adminProfilePic ? (
-              <img src={adminProfilePic} alt="Admin" className="h-12 w-12 rounded-xl object-cover shadow-sm ring-2 ring-transparent group-hover:ring-[#2D5A27] transition-all" />
+              <img src={adminProfilePic} alt="Admin" className="h-12 w-12 rounded-xl object-cover shadow-sm ring-2 ring-transparent group-hover:ring-[#2D5A27] dark:group-hover:ring-emerald-400 transition-all" />
             ) : (
               <div className="bg-[#2D5A27] p-3 rounded-xl shadow-sm group-hover:bg-[#23471E] transition-colors">
                 <ShieldCheck className="h-6 w-6 text-white" />
               </div>
             )}
-            <div className="absolute -bottom-1.5 -right-1.5 bg-white rounded-full p-1 shadow border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Camera className="w-3.5 h-3.5 text-gray-500" />
+            <div className="absolute -bottom-1.5 -right-1.5 bg-white dark:bg-slate-800 rounded-full p-1 shadow border border-gray-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Camera className="w-3.5 h-3.5 text-gray-500 dark:text-slate-400" />
             </div>
           </label>
-          <h1 className="text-3xl font-bold text-gray-900">{t('admin_panel')}</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100">{t('admin_panel')}</h1>
         </div>
         
         {activeTab === 'products' && (
@@ -239,24 +248,24 @@ export function AdminPanel() {
         )}
       </div>
 
-      <div className="flex space-x-4 border-b border-[#DCE4D8] mb-6 overflow-x-auto">
+      <div className="flex space-x-4 border-b border-[#DCE4D8] dark:border-slate-800 mb-6 overflow-x-auto">
         <button 
           onClick={() => setActiveTab('dashboard')}
-          className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'dashboard' ? 'border-[#2D5A27] text-[#2D5A27]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+          className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'dashboard' ? 'border-[#2D5A27] text-[#2D5A27] dark:border-emerald-400 dark:text-emerald-400' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-slate-350'}`}
         >
           <LayoutDashboard className="w-5 h-5"/>
           Dashboard
         </button>
         <button 
           onClick={() => setActiveTab('products')}
-          className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'products' ? 'border-[#2D5A27] text-[#2D5A27]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+          className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'products' ? 'border-[#2D5A27] text-[#2D5A27] dark:border-emerald-400 dark:text-emerald-400' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-slate-350'}`}
         >
           <Package className="w-5 h-5"/>
           {t('products' as any)}
         </button>
         <button 
           onClick={() => setActiveTab('orders')}
-          className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'orders' ? 'border-[#2D5A27] text-[#2D5A27]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+          className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'orders' ? 'border-[#2D5A27] text-[#2D5A27] dark:border-emerald-400 dark:text-emerald-400' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-slate-350'}`}
         >
           <ListChecks className="w-5 h-5"/>
           {t('orders' as any)}
@@ -268,14 +277,14 @@ export function AdminPanel() {
         </button>
         <button 
           onClick={() => setActiveTab('workspace')}
-          className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'workspace' ? 'border-[#2D5A27] text-[#2D5A27]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+          className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'workspace' ? 'border-[#2D5A27] text-[#2D5A27] dark:border-emerald-400 dark:text-emerald-400' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-slate-350'}`}
         >
           <Mail className="w-5 h-5"/>
           Workspace Sync
         </button>
         <button 
           onClick={() => setActiveTab('settings' as any)}
-          className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'settings' as any ? 'border-[#2D5A27] text-[#2D5A27]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+          className={`flex items-center gap-2 px-6 py-3 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'settings' as any ? 'border-[#2D5A27] text-[#2D5A27] dark:border-emerald-400 dark:text-emerald-400' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-slate-350'}`}
         >
           <ShieldCheck className="w-5 h-5"/>
           Settings
@@ -284,32 +293,32 @@ export function AdminPanel() {
 
       {activeTab === 'dashboard' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-sm border border-[#DCE4D8] p-6 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-[#DCE4D8] dark:border-slate-800 p-6 flex flex-col">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="bg-blue-100 p-3 rounded-xl">
-                <ListChecks className="w-6 h-6 text-blue-600" />
+              <div className="bg-blue-100 dark:bg-blue-950/40 p-3 rounded-xl">
+                <ListChecks className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-800">Total Orders</h3>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-200">Total Orders</h3>
             </div>
-            <p className="text-4xl font-bold text-gray-900">{orders.length}</p>
+            <p className="text-4xl font-bold text-gray-900 dark:text-slate-100">{orders.length}</p>
           </div>
-          <div className="bg-white rounded-2xl shadow-sm border border-[#DCE4D8] p-6 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-[#DCE4D8] dark:border-slate-800 p-6 flex flex-col">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="bg-green-100 p-3 rounded-xl">
-                <DollarSign className="w-6 h-6 text-green-600" />
+              <div className="bg-green-100 dark:bg-emerald-950/40 p-3 rounded-xl">
+                <DollarSign className="w-6 h-6 text-green-600 dark:text-emerald-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-800">Total Revenue</h3>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-200">Total Revenue</h3>
             </div>
-            <p className="text-4xl font-bold text-gray-900">${orders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}</p>
+            <p className="text-4xl font-bold text-gray-900 dark:text-slate-100">₹{orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0).toLocaleString()}</p>
           </div>
-          <div className="bg-white rounded-2xl shadow-sm border border-[#DCE4D8] p-6 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-[#DCE4D8] dark:border-slate-800 p-6 flex flex-col">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="bg-purple-100 p-3 rounded-xl">
-                <ShoppingCart className="w-6 h-6 text-purple-600" />
+              <div className="bg-purple-100 dark:bg-purple-950/40 p-3 rounded-xl">
+                <ShoppingCart className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-800">Items Sold</h3>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-200">Items Sold</h3>
             </div>
-            <p className="text-4xl font-bold text-gray-900">{orders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0)}</p>
+            <p className="text-4xl font-bold text-gray-900 dark:text-slate-100">{orders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0)}</p>
           </div>
         </div>
       )}
@@ -317,45 +326,45 @@ export function AdminPanel() {
       {activeTab === 'products' && (
         <>
           {isFormOpen && (
-        <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-8 mb-8 animate-fade-in overflow-hidden relative">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-green-200 dark:border-slate-800 p-8 mb-8 animate-fade-in overflow-hidden relative">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-green-600"></div>
-          <h2 className="text-xl font-bold text-gray-800 mb-6">{editingId ? t('edit' as any) : t('add_product')}</h2>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100 mb-6">{editingId ? t('edit' as any) : t('add_product')}</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-700">{t('name')}</label>
-              <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all" />
+              <label className="block text-sm font-semibold text-gray-700 dark:text-slate-350">{t('name')}</label>
+              <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-gray-900 dark:text-slate-100 transition-all" />
             </div>
             
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-700">{t('category')}</label>
-              <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value as Category})} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all">
-                <option value="Feed">{t('feed')}</option>
-                <option value="Medicine">{t('medicine')}</option>
-                <option value="Appetite">{t('appetite')}</option>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-slate-350">{t('category')}</label>
+              <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value as Category})} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-gray-900 dark:text-slate-100 transition-all">
+                <option value="Feed" className="bg-white dark:bg-slate-900">{t('feed')}</option>
+                <option value="Medicine" className="bg-white dark:bg-slate-900">{t('medicine')}</option>
+                <option value="Appetite" className="bg-white dark:bg-slate-900">{t('appetite')}</option>
               </select>
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700">{t('description')}</label>
-              <textarea required rows={2} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all" />
+              <label className="block text-sm font-semibold text-gray-700 dark:text-slate-350">{t('description')}</label>
+              <textarea required rows={2} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-gray-900 dark:text-slate-100 transition-all" />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-700">{t('price')}</label>
-              <input required type="number" min="0" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all" />
+              <label className="block text-sm font-semibold text-gray-700 dark:text-slate-350">{t('price')}</label>
+              <input required type="number" min="0" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-gray-900 dark:text-slate-100 transition-all" />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-700">{t('stock')}</label>
-              <input required type="number" min="0" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all" />
+              <label className="block text-sm font-semibold text-gray-700 dark:text-slate-350">{t('stock')}</label>
+              <input required type="number" min="0" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-gray-900 dark:text-slate-100 transition-all" />
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700">{t('image_url' as any)}</label>
-              <input type="url" placeholder="https://example.com/image.jpg" value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all" />
+              <label className="block text-sm font-semibold text-gray-700 dark:text-slate-350">{t('image_url' as any)}</label>
+              <input type="url" placeholder="https://example.com/image.jpg" value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-gray-900 dark:text-slate-100 transition-all" />
             </div>
             
-            <div className="md:col-span-2 flex justify-end pt-4 mt-2 border-t border-gray-100">
+            <div className="md:col-span-2 flex justify-end pt-4 mt-2 border-t border-gray-100 dark:border-slate-800">
               <button type="submit" className="bg-[#2D5A27] hover:bg-[#23471E] text-white font-bold py-3 px-8 rounded-lg shadow-sm transition-colors">
                 {t('save_product' as any)}
               </button>
@@ -364,40 +373,40 @@ export function AdminPanel() {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl shadow-sm border border-[#E1E8DE] overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-[#E1E8DE] dark:border-slate-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#F4F7F2] text-gray-500 text-xs uppercase tracking-wider">
-                <th className="p-5 font-bold border-b border-[#E1E8DE]">{t('name')}</th>
-                <th className="p-5 font-bold border-b border-[#E1E8DE]">{t('category')}</th>
-                <th className="p-5 font-bold border-b border-[#E1E8DE]">{t('price')}</th>
-                <th className="p-5 font-bold border-b border-[#E1E8DE]">{t('stock')}</th>
-                <th className="p-5 font-bold border-b border-[#E1E8DE] text-right">{t('actions' as any)}</th>
+              <tr className="bg-[#F4F7F2] dark:bg-slate-950/60 text-gray-500 dark:text-slate-400 text-xs uppercase tracking-wider">
+                <th className="p-5 font-bold border-b border-[#E1E8DE] dark:border-slate-800">{t('name')}</th>
+                <th className="p-5 font-bold border-b border-[#E1E8DE] dark:border-slate-800">{t('category')}</th>
+                <th className="p-5 font-bold border-b border-[#E1E8DE] dark:border-slate-800">{t('price')}</th>
+                <th className="p-5 font-bold border-b border-[#E1E8DE] dark:border-slate-800">{t('stock')}</th>
+                <th className="p-5 font-bold border-b border-[#E1E8DE] dark:border-slate-800 text-right">{t('actions' as any)}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E1E8DE]">
+            <tbody className="divide-y divide-[#E1E8DE] dark:divide-slate-800">
               {products.map(product => (
-                <tr key={product.id} className="hover:bg-[#F9FBF8] transition-colors group">
+                <tr key={product.id} className="hover:bg-[#F9FBF8] dark:hover:bg-slate-850/40 transition-colors group">
                   <td className="p-5">
                     <div className="flex items-center gap-3">
                       {product.imageUrl && (
                         <img src={product.imageUrl} alt={product.name} className="w-10 h-10 rounded object-cover" />
                       )}
                       <div>
-                        <div className="font-bold text-gray-900 mb-0.5">{product.name}</div>
-                        <div className="text-sm text-gray-500 truncate max-w-[200px] sm:max-w-xs">{product.description}</div>
+                        <div className="font-bold text-gray-900 dark:text-slate-100 mb-0.5">{product.name}</div>
+                        <div className="text-sm text-gray-500 dark:text-slate-400 truncate max-w-[200px] sm:max-w-xs">{product.description}</div>
                       </div>
                     </div>
                   </td>
                   <td className="p-5">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold bg-[#E9F0E6] text-[#2D5A27] uppercase tracking-wider">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold bg-[#E9F0E6] dark:bg-emerald-950/40 text-[#2D5A27] dark:text-emerald-400 uppercase tracking-wider">
                       {t(product.category.toLowerCase() as any)}
                     </span>
                   </td>
-                  <td className="p-5 font-bold text-gray-900 text-lg">₹{product.price}</td>
+                  <td className="p-5 font-bold text-gray-900 dark:text-slate-100 text-lg">₹{product.price}</td>
                   <td className="p-5">
-                    <span className={`font-black text-lg ${product.stock > 0 ? 'text-gray-900' : 'text-red-500'}`}>
+                    <span className={`font-black text-lg ${product.stock > 0 ? 'text-gray-900 dark:text-slate-100' : 'text-red-500'}`}>
                       {product.stock}
                     </span>
                   </td>
@@ -434,77 +443,108 @@ export function AdminPanel() {
       )}
 
       {activeTab === 'orders' && (
-        <div className="bg-white rounded-2xl shadow-sm border border-[#E1E8DE] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#F4F7F2] text-gray-500 text-xs uppercase tracking-wider">
-                  <th className="p-5 font-bold border-b border-[#E1E8DE]">Order ID</th>
-                  <th className="p-5 font-bold border-b border-[#E1E8DE]">{t('customer' as any)}</th>
-                  <th className="p-5 font-bold border-b border-[#E1E8DE]">Items</th>
-                  <th className="p-5 font-bold border-b border-[#E1E8DE]">{t('status' as any)}</th>
-                  <th className="p-5 font-bold border-b border-[#E1E8DE] text-right">{t('actions' as any)}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#E1E8DE]">
-                {orders.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="p-16 text-center text-gray-500">
-                      No orders found.
-                    </td>
+        <div className="space-y-4 animate-fade-in">
+          {/* Status filter toolbar */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-[#E1E8DE] dark:border-slate-800 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-gray-805 dark:text-slate-100">
+                {t('orders' as any)}
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+                Showing {filteredOrders.length} of {orders.length} total orders
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-2.5">
+              <label htmlFor="status-filter" className="text-xs font-bold text-gray-400 dark:text-slate-450 uppercase tracking-wider">
+                Filter by Status:
+              </label>
+              <select
+                id="status-filter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="px-3.5 py-1.5 bg-gray-50 dark:bg-slate-950 border border-[#DCE4D8] dark:border-slate-800 rounded-xl text-xs font-bold text-gray-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-[#2D5A27] focus:bg-white dark:focus:bg-slate-900 transition-all shadow-sm cursor-pointer"
+              >
+                <option value="All" className="bg-white dark:bg-slate-900">All Statuses</option>
+                <option value="Pending Payment" className="bg-white dark:bg-slate-900">Pending Payment</option>
+                <option value="Processing" className="bg-white dark:bg-slate-900">Processing</option>
+                <option value="Delivered" className="bg-white dark:bg-slate-900">Delivered</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-[#E1E8DE] dark:border-slate-800 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-[#F4F7F2] dark:bg-slate-950/60 text-gray-500 dark:text-slate-400 text-xs uppercase tracking-wider">
+                    <th className="p-5 font-bold border-b border-[#E1E8DE] dark:border-slate-800">Order ID</th>
+                    <th className="p-5 font-bold border-b border-[#E1E8DE] dark:border-slate-800">{t('customer' as any)}</th>
+                    <th className="p-5 font-bold border-b border-[#E1E8DE] dark:border-slate-800">Items</th>
+                    <th className="p-5 font-bold border-b border-[#E1E8DE] dark:border-slate-800">{t('status' as any)}</th>
+                    <th className="p-5 font-bold border-b border-[#E1E8DE] dark:border-slate-800 text-right">{t('actions' as any)}</th>
                   </tr>
-                )}
-                {orders.map(order => (
-                  <tr key={order.id} className="hover:bg-[#F9FBF8] transition-colors">
-                    <td className="p-5">
-                      <div className="font-bold text-gray-900">#{order.id}</div>
-                      <div className="text-xs text-gray-500 mt-1">{new Date(order.date).toLocaleString()}</div>
-                    </td>
-                    <td className="p-5">
-                      <div className="font-bold text-gray-900">{order.customerInfo.name}</div>
-                      <div className="text-sm text-gray-600">{order.customerInfo.phone}</div>
-                      {order.customerInfo.email && <div className="text-xs text-[#2D5A27]">{order.customerInfo.email}</div>}
-                      <div className="text-xs text-gray-500 mt-0.5 line-clamp-2 max-w-[200px]" title={order.customerInfo.address}>{order.customerInfo.address}</div>
-                    </td>
-                    <td className="p-5">
-                      <div className="text-sm text-gray-700 font-medium">
-                        {order.items.reduce((acc, item) => acc + item.quantity, 0)} items
-                      </div>
-                      <div className="font-bold text-[#2D5A27] mt-1">₹{order.totalAmount.toLocaleString()}</div>
-                    </td>
-                    <td className="p-5">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                        order.status === 'Processing' ? 'bg-yellow-100 text-yellow-800' :
-                        order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="p-5 text-right whitespace-nowrap">
-                      {order.status === 'Processing' && (
-                        <button 
-                          onClick={() => updateOrderStatus(order.id, 'Delivered')}
-                          className="bg-[#2D5A27] hover:bg-[#23471E] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm"
-                        >
-                          {t('mark_delivered' as any)}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[#E1E8DE] dark:divide-slate-800">
+                  {filteredOrders.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="p-16 text-center text-gray-500 dark:text-slate-400">
+                        {statusFilter === 'All' ? 'No orders found.' : `No orders found with status "${statusFilter}".`}
+                      </td>
+                    </tr>
+                  )}
+                  {filteredOrders.map(order => (
+                    <tr key={order.id} className="hover:bg-[#F9FBF8] dark:hover:bg-slate-850/40 transition-colors">
+                      <td className="p-5">
+                        <div className="font-bold text-gray-900 dark:text-slate-100">#{order.id}</div>
+                        <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">{new Date(order.date).toLocaleString()}</div>
+                      </td>
+                      <td className="p-5">
+                        <div className="font-bold text-gray-900 dark:text-slate-100">{order.customerInfo.name}</div>
+                        <div className="text-sm text-gray-650 dark:text-slate-350">{order.customerInfo.phone}</div>
+                        {order.customerInfo.email && <div className="text-xs text-[#2D5A27] dark:text-emerald-400">{order.customerInfo.email}</div>}
+                        <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 line-clamp-2 max-w-[200px]" title={order.customerInfo.address}>{order.customerInfo.address}</div>
+                      </td>
+                      <td className="p-5">
+                        <div className="text-sm text-gray-700 dark:text-slate-300 font-medium font-mono">
+                          {order.items.reduce((acc, item) => acc + item.quantity, 0)} items
+                        </div>
+                        <div className="font-bold text-[#2D5A27] dark:text-emerald-400 mt-1">₹{order.totalAmount.toLocaleString()}</div>
+                      </td>
+                      <td className="p-5">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                          order.status === 'Processing' ? 'bg-[#FFFBEB] dark:bg-amber-950/40 text-[#B45309] dark:text-amber-400' :
+                          order.status === 'Delivered' ? 'bg-[#ECFDF5] dark:bg-emerald-950/40 text-[#047857] dark:text-emerald-450' :
+                          'bg-[#F3F4F6] dark:bg-slate-800 text-[#374151] dark:text-slate-305'
+                        }`}>
+                          {order.status}
+                        </span>
+                      </td>
+                      <td className="p-5 text-right whitespace-nowrap">
+                        {order.status === 'Processing' && (
+                          <button 
+                            onClick={() => updateOrderStatus(order.id, 'Delivered')}
+                            className="bg-[#2D5A27] hover:bg-[#23471E] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm"
+                          >
+                            {t('mark_delivered' as any)}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
 
       {activeTab === 'workspace' && (
-        <div className="bg-white rounded-2xl shadow-sm border border-[#E1E8DE] p-8">
-          <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-100">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-[#E1E8DE] dark:border-slate-800 p-8 animate-fade-in">
+          <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-100 dark:border-slate-800">
             <div>
-              <h2 className="text-xl font-bold text-gray-800">Workspace Integration</h2>
-              <p className="text-sm text-gray-500 mt-1">Connect your Google Workspace to send order updates, view unread messages, and export orders to Sheets.</p>
+              <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100">Workspace Integration</h2>
+              <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Connect your Google Workspace to send order updates, view unread messages, and export orders to Sheets.</p>
             </div>
             {user && (
               <button onClick={handleLogout} className="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors">
@@ -515,13 +555,13 @@ export function AdminPanel() {
 
           {!user ? (
             <div className="flex flex-col items-center justify-center py-12">
-              <div className="bg-blue-50 p-4 rounded-full mb-6">
+              <div className="bg-blue-50 dark:bg-blue-950/40 p-4 rounded-full mb-6">
                 <Mail className="w-10 h-10 text-blue-500" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Connect Google Workspace</h3>
-              <p className="text-sm text-gray-500 text-center max-w-md mb-8">Authenticate securely to sync your emails and allow the store to send automated order status updates.</p>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100 mb-2">Connect Google Workspace</h3>
+              <p className="text-sm text-gray-500 dark:text-slate-400 text-center max-w-md mb-8">Authenticate securely to sync your emails and allow the store to send automated order status updates.</p>
               
-              <button onClick={handleGoogleLogin} className="flex items-center space-x-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-6 py-3 rounded-lg shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-gray-200">
+              <button onClick={handleGoogleLogin} className="flex items-center space-x-3 bg-white dark:bg-slate-850 border border-gray-300 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-slate-300 font-medium px-6 py-3 rounded-lg shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-gray-200">
                 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-5 h-5">
                   <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
                   <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
@@ -534,16 +574,16 @@ export function AdminPanel() {
             </div>
           ) : (
             <div>
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-100 dark:border-slate-800">
                 <div>
-                  <div className="text-sm text-gray-500 mb-1">Connected account</div>
-                  <div className="font-bold text-gray-900">{user.email}</div>
+                  <div className="text-sm text-gray-500 dark:text-slate-450 mb-1">Connected account</div>
+                  <div className="font-bold text-gray-900 dark:text-slate-100">{user.email}</div>
                 </div>
                 <div className="flex space-x-2">
                   <button 
                     onClick={handleExportOrdersToSheets}
                     disabled={isExporting}
-                    className="flex items-center space-x-2 bg-[#F0FDF4] border border-[#BBF7D0] hover:bg-[#DCFCE7] text-[#166534] px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                    className="flex items-center space-x-2 bg-[#F0FDF4] dark:bg-emerald-950/40 border border-[#BBF7D0] dark:border-emerald-900 hover:bg-[#DCFCE7] dark:hover:bg-emerald-900/60 text-[#166534] dark:text-emerald-400 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 text-sm"
                   >
                     <RefreshCw className={`w-4 h-4 ${isExporting ? 'animate-spin' : ''}`} />
                     <span>Export Orders to Sheets</span>
@@ -551,7 +591,7 @@ export function AdminPanel() {
                   <button 
                     onClick={handleFetchEmails}
                     disabled={isLoadingEmails}
-                    className="flex items-center space-x-2 bg-[#F4F7F2] hover:bg-[#E1E8DE] text-[#2D5A27] px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                    className="flex items-center space-x-2 bg-[#F4F7F2] dark:bg-slate-800 hover:bg-[#E1E8DE] dark:hover:bg-slate-700 text-[#2D5A27] dark:text-emerald-400 border border-transparent dark:border-slate-700 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 text-sm"
                   >
                     <RefreshCw className={`w-4 h-4 ${isLoadingEmails ? 'animate-spin' : ''}`} />
                     <span>Sync Unread</span>
@@ -561,8 +601,8 @@ export function AdminPanel() {
 
               <div className="space-y-4">
                 {emails.length === 0 && !isLoadingEmails && (
-                  <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                    <p className="text-gray-500">No unread emails to display.</p>
+                  <div className="text-center py-12 bg-gray-50 dark:bg-slate-950/40 rounded-xl border border-dashed border-gray-200 dark:border-slate-800">
+                    <p className="text-gray-500 dark:text-slate-450">No unread emails to display.</p>
                   </div>
                 )}
                 
@@ -570,10 +610,10 @@ export function AdminPanel() {
                   const subjectHeader = email.payload.headers.find((h: any) => h.name === 'Subject');
                   const fromHeader = email.payload.headers.find((h: any) => h.name === 'From');
                   return (
-                    <div key={email.id} className="p-4 bg-white border border-gray-100 shadow-sm rounded-xl hover:border-blue-100 transition-colors">
-                      <div className="font-bold text-gray-900 mb-1">{subjectHeader ? subjectHeader.value : '(No Subject)'}</div>
-                      <div className="text-sm text-gray-500">{fromHeader ? fromHeader.value : 'Unknown Sender'}</div>
-                      <div className="text-xs text-gray-400 mt-2">{email.snippet}</div>
+                    <div key={email.id} className="p-4 bg-white dark:bg-slate-950 border border-gray-100 dark:border-slate-800 shadow-sm rounded-xl hover:border-blue-105 dark:hover:border-blue-900 transition-colors">
+                      <div className="font-bold text-gray-900 dark:text-slate-100 mb-1">{subjectHeader ? subjectHeader.value : '(No Subject)'}</div>
+                      <div className="text-sm text-gray-550 dark:text-slate-400">{fromHeader ? fromHeader.value : 'Unknown Sender'}</div>
+                      <div className="text-xs text-gray-400 dark:text-slate-500 mt-2">{email.snippet}</div>
                     </div>
                   );
                 })}
@@ -584,25 +624,25 @@ export function AdminPanel() {
       )}
 
       {activeTab === 'settings' && (
-        <div className="bg-white rounded-2xl shadow-sm border border-[#E1E8DE] p-8">
-          <div className="mb-8 border-b border-gray-100 pb-6">
-            <h2 className="text-xl font-bold text-gray-800">Admin Settings</h2>
-            <p className="text-sm text-gray-500 mt-1">Manage your administrator account preferences.</p>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-[#E1E8DE] dark:border-slate-800 p-8 animate-fade-in">
+          <div className="mb-8 border-b border-gray-100 dark:border-slate-800 pb-6">
+            <h2 className="text-xl font-bold text-gray-808 dark:text-slate-100">Admin Settings</h2>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Manage your administrator account preferences.</p>
           </div>
 
           <div className="max-w-md space-y-10">
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Profile Picture</h3>
+              <h3 className="text-lg font-semibold text-gray-808 dark:text-slate-205 mb-4">Profile Picture</h3>
               <div className="flex items-center gap-6">
                 {adminProfilePic ? (
                   <img src={adminProfilePic} alt="Admin Profile" className="h-20 w-20 rounded-full object-cover shadow-sm" />
                 ) : (
-                  <div className="h-20 w-20 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+                  <div className="h-20 w-20 rounded-full bg-gray-105 dark:bg-slate-950 flex items-center justify-center text-gray-400 dark:text-slate-500">
                     <User className="h-8 w-8" />
                   </div>
                 )}
                 <div>
-                  <label className="bg-white border border-[#DCE4D8] hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg cursor-pointer transition-colors inline-flex items-center">
+                  <label className="bg-white dark:bg-slate-850 border border-[#DCE4D8] dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-slate-300 font-medium py-2 px-4 rounded-lg cursor-pointer transition-colors inline-flex items-center text-sm shadow-sm">
                     <span>Upload Image</span>
                     <input 
                       type="file" 
@@ -623,18 +663,18 @@ export function AdminPanel() {
                   {adminProfilePic && (
                     <button 
                       onClick={() => setAdminProfilePic(null)}
-                      className="text-red-500 hover:text-red-600 text-sm font-medium ml-4 mt-2 inline-block transition-colors"
+                      className="text-red-500 hover:text-red-650 text-sm font-medium ml-4 mt-2 inline-block transition-colors"
                     >
                       Remove
                     </button>
                   )}
-                  <p className="text-xs text-gray-500 mt-2">Recommended: 256x256px or larger. Max 2MB.</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-450 mt-2">Recommended: 256x256px or larger. Max 2MB.</p>
                 </div>
               </div>
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Change Password</h3>
+              <h3 className="text-lg font-semibold text-gray-808 dark:text-slate-205 mb-4">Change Password</h3>
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
@@ -648,19 +688,19 @@ export function AdminPanel() {
               className="space-y-4"
             >
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                <label className="block text-sm font-medium text-gray-705 dark:text-slate-350 mb-1">New Password</label>
                 <input 
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#558B4D] focus:border-[#558B4D] outline-none transition-all"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-gray-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-[#558B4D] focus:border-[#558B4D] outline-none transition-all text-sm"
                   placeholder="••••••••"
                   required
                 />
               </div>
               <button 
                 type="submit"
-                className="bg-[#2D5A27] hover:bg-[#23471E] text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-sm"
+                className="bg-[#2D5A27] hover:bg-[#23471E] text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-sm text-sm"
               >
                 Update Password
               </button>

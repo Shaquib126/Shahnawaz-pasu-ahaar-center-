@@ -31,11 +31,30 @@ interface StoreContextType {
   placeOrder: (order: Omit<Order, 'id' | 'date' | 'status'>) => string;
   updateOrderStatus: (id: string, status: Order['status']) => void;
   cancelOrder: (orderId: string) => Promise<boolean>;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    return (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
+  });
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  };
+
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('products');
     return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
@@ -366,7 +385,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setAdminProfilePic, setLanguage, loginAdmin, changeAdminPassword, logoutAdmin, loginCustomer, logoutCustomer,
       addToCart, removeFromCart, updateCartQuantity, clearCart,
       addProduct, updateProduct, deleteProduct,
-      placeOrder, updateOrderStatus, cancelOrder
+      placeOrder, updateOrderStatus, cancelOrder,
+      theme, toggleTheme
     }}>
       {children}
     </StoreContext.Provider>

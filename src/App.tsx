@@ -33,7 +33,7 @@ function MainApp() {
   }, [clearCart, updateOrderStatus]);
 
   return (
-    <div className="min-h-screen bg-[#F4F7F2] text-[#2C3E2D] font-sans flex flex-col">
+    <div className="min-h-screen bg-[#F4F7F2] text-[#2C3E2D] dark:bg-slate-950 dark:text-slate-100 font-sans flex flex-col transition-colors duration-300">
       <Header view={view} setView={setView} />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 h-full">
         {view === 'shop' && <Shop />}

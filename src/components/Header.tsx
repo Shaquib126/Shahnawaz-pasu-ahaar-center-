@@ -1,9 +1,9 @@
 import React from 'react';
 import { useStore } from '../StoreContext';
-import { ShoppingCart, LogIn, LogOut, Settings, Leaf, User, ShoppingBag } from 'lucide-react';
+import { ShoppingCart, LogIn, LogOut, Settings, Leaf, User, ShoppingBag, Sun, Moon } from 'lucide-react';
 
 export function Header({ view, setView }: { view: string, setView: (v: any) => void }) {
-  const { cart, language, setLanguage, t, isAdmin, logoutAdmin, currentUser, loginCustomer, logoutCustomer, adminProfilePic } = useStore();
+  const { cart, language, setLanguage, t, isAdmin, logoutAdmin, currentUser, loginCustomer, logoutCustomer, adminProfilePic, theme, toggleTheme } = useStore();
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
@@ -27,6 +27,14 @@ export function Header({ view, setView }: { view: string, setView: (v: any) => v
               <span>{language === 'en' ? 'EN' : 'हि'}</span>
               <span className="opacity-40 text-xs">|</span>
               <span className="opacity-70">{language === 'en' ? 'हि' : 'EN'}</span>
+            </button>
+
+            <button
+              onClick={toggleTheme}
+              className="p-2 bg-[#447A3C] hover:bg-[#558B4D] rounded-full transition-all text-white flex items-center justify-center active:scale-90"
+              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+            >
+              {theme === 'light' ? <Moon className="h-4.5 w-4.5 text-indigo-100" /> : <Sun className="h-4.5 w-4.5 text-amber-300" />}
             </button>
 
             <button 
@@ -58,16 +66,17 @@ export function Header({ view, setView }: { view: string, setView: (v: any) => v
                 </span>
                 <button 
                   onClick={() => logoutCustomer()}
-                  className="p-2 hover:bg-[#447A3C] rounded-full transition-colors text-red-200 hover:text-red-100"
+                  className="p-2 sm:px-3 sm:py-2 hover:bg-[#447A3C] rounded-full sm:rounded-lg transition-colors text-red-200 hover:text-red-100 flex items-center gap-1.5"
                   title="Logout"
                 >
-                  <LogOut className="h-5 w-5" />
+                  <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="hidden sm:inline text-xs font-medium">Logout</span>
                 </button>
               </div>
             ) : (
               <button 
                 onClick={() => loginCustomer()}
-                className="text-sm font-medium opacity-80 hover:opacity-100 flex items-center gap-1.5 p-2 bg-[#3A6B34] hover:bg-[#447A3C] rounded-lg transition-colors border border-[#447A3C]"
+                className="text-sm font-medium opacity-80 hover:opacity-100 flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 bg-[#3A6B34] hover:bg-[#447A3C] rounded-lg transition-colors border border-[#447A3C]"
                 title="Sign in with Google"
               >
                 <User className="w-4 h-4" />
@@ -90,10 +99,11 @@ export function Header({ view, setView }: { view: string, setView: (v: any) => v
                 </button>
                 <button 
                   onClick={() => { logoutAdmin(); setView('shop'); }}
-                  className="p-2 hover:bg-[#447A3C] rounded-full transition-colors text-red-300 hover:text-red-100"
+                  className="p-2 sm:px-3 sm:py-2 hover:bg-[#447A3C] rounded-full sm:rounded-lg transition-colors text-red-300 hover:text-red-100 flex items-center gap-1.5"
                   title={t('logout')}
                 >
-                  <LogOut className="h-5 w-5" />
+                  <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="hidden sm:inline text-xs font-medium">Logout</span>
                 </button>
               </div>
             ) : (
