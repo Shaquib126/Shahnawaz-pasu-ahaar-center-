@@ -1,6 +1,6 @@
 {
   "name": "Shahnawaz Pasu Ahaar Center",
   "description": "E-commerce web application for a cattle feed and medicine shop.",
-  "requestFramePermissions": ["geolocation"],
+  "requestFramePermissions": ["geolocation", "camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
