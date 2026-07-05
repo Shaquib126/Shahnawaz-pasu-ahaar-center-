@@ -4,6 +4,7 @@ import { INITIAL_PRODUCTS } from './data';
 import { Language, translations } from './i18n';
 import { User } from 'firebase/auth';
 import { initAuth, googleSignIn, logout as firebaseLogout, getAccessToken } from './auth';
+import { setupPushNotifications, triggerLocalNotification } from './notifications';
 
 interface StoreContextType {
   products: Product[];
@@ -28,7 +29,7 @@ interface StoreContextType {
   addProduct: (product: Omit<Product, 'id'>) => void;
   updateProduct: (id: string, product: Omit<Product, 'id'>) => void;
   deleteProduct: (productId: string) => void;
-  placeOrder: (order: Omit<Order, 'id' | 'date' | 'status'>) => string;
+  placeOrder: (order: Omit<Order, 'id' | 'date' | 'status'>, initialStatus?: Order['status']) => Promise<string>;
   updateOrderStatus: (id: string, status: Order['status']) => void;
   cancelOrder: (orderId: string) => Promise<boolean>;
   theme: 'light' | 'dark';
@@ -110,6 +111,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    // Register push notifications when app mounts or user logs in/out
+    const email = currentUser?.email || undefined;
+    const uid = currentUser?.uid || undefined;
+    setupPushNotifications(email, uid);
+  }, [currentUser]);
 
   useEffect(() => {
     fetch('/api/products')
@@ -241,21 +249,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setCart(prev => prev.filter(c => c.productId !== productId));
   };
 
-  const placeOrder = (orderData: Omit<Order, 'id' | 'date' | 'status'>) => {
+  const placeOrder = async (orderData: Omit<Order, 'id' | 'date' | 'status'>, initialStatus: Order['status'] = 'Pending Payment'): Promise<string> => {
     const newOrder: Order = {
       ...orderData,
       id: Math.random().toString(36).substring(2, 9).toUpperCase(),
       date: new Date().toISOString(),
-      status: 'Pending Payment'
+      status: initialStatus
     };
     setOrders(prev => [newOrder, ...prev]);
 
-    // Async sync to MongoDB database
-    fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newOrder)
-    }).catch(err => console.error("Error syncing order to MongoDB:", err));
+    // Sync to MongoDB database and wait for it to complete
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newOrder)
+      });
+      if (!response.ok) {
+        console.error("Failed to sync order to MongoDB");
+      }
+    } catch (err) {
+      console.error("Error syncing order to MongoDB:", err);
+    }
 
     return newOrder.id;
   };
@@ -366,6 +381,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           await sendOrderStatusEmail(orderToEmail, status);
         } catch (err) {
           console.error("Failed to send order status email automatically:", err);
+        }
+      }
+
+      // Trigger local push notification fallback when status transitions from Processing to Shipped
+      if (oldStatus === 'Processing' && status === 'Shipped') {
+        try {
+          await triggerLocalNotification(
+            "Order Shipped! 🚚",
+            `Good news! Your order #${orderId} has been shipped and is on its way.`,
+            orderId
+          );
+        } catch (err) {
+          console.error("Failed to send fallback local push notification:", err);
         }
       }
     }

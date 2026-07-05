@@ -58,11 +58,11 @@ export const initAuth = (
 };
 
 export const googleSignIn = async (isAdmin: boolean = false): Promise<void> => {
+  const provider = isAdmin ? adminProvider : customerProvider;
   try {
     isSigningIn = true;
-    const provider = isAdmin ? adminProvider : customerProvider;
     
-    // Always use popup, redirect often fails in embedded browsers (like Facebook)
+    // Attempt popup sign in first
     const result = await signInWithPopup(auth, provider);
     
     if (isAdmin && result && result.providerId === adminProvider.providerId) {
@@ -73,7 +73,22 @@ export const googleSignIn = async (isAdmin: boolean = false): Promise<void> => {
     }
     isSigningIn = false;
   } catch (error: any) {
-    console.error('Sign in error in googleSignIn:', error);
+    console.warn('Sign in with popup failed or was blocked. Error:', error);
+    
+    const isPopupBlocked = error.code === 'auth/popup-blocked' || 
+                           error.message?.includes('popup-blocked') || 
+                           error.message?.includes('popup');
+                           
+    if (isPopupBlocked) {
+      console.log('Popup blocked. Attempting fallback to signInWithRedirect...');
+      try {
+        await signInWithRedirect(auth, provider);
+        return;
+      } catch (redirectError) {
+        console.error('Redirect fallback also failed:', redirectError);
+      }
+    }
+    
     isSigningIn = false;
     throw error;
   }

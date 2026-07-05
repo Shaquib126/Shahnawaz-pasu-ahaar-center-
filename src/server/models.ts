@@ -30,9 +30,11 @@ const orderSchema = new mongoose.Schema({
   status: { 
     type: String, 
     required: true,
-    enum: ['Pending Payment', 'Processing', 'Delivered'],
+    enum: ['Pending Payment', 'Processing', 'Shipped', 'Delivered'],
     default: 'Pending Payment'
-  }
+  },
+  razorpayOrderId: { type: String },
+  razorpayPaymentId: { type: String }
 }, { timestamps: true });
 
 const userSchema = new mongoose.Schema({
@@ -46,3 +48,21 @@ const userSchema = new mongoose.Schema({
 export const User = mongoose.model('User', userSchema);
 export const Product = mongoose.model('Product', productSchema);
 export const Order = mongoose.model('Order', orderSchema);
+
+const pushSubscriptionSchema = new mongoose.Schema({
+  endpoint: { type: String, required: true, unique: true },
+  keys: {
+    p256dh: { type: String, required: true },
+    auth: { type: String, required: true }
+  },
+  email: { type: String },
+  firebaseUid: { type: String }
+}, { timestamps: true });
+
+const systemConfigSchema = new mongoose.Schema({
+  key: { type: String, required: true, unique: true },
+  value: { type: mongoose.Schema.Types.Mixed, required: true }
+}, { timestamps: true });
+
+export const PushSubscription = mongoose.model('PushSubscription', pushSubscriptionSchema);
+export const SystemConfig = mongoose.model('SystemConfig', systemConfigSchema);

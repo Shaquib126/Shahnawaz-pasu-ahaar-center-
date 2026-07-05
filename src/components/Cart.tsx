@@ -5,7 +5,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Order } from '../types';
 
 export function Cart({ setView }: { setView: (v: any) => void }) {
-  const { cart, products, updateCartQuantity, removeFromCart, clearCart, t, placeOrder, currentUser } = useStore();
+  const { cart, products, updateCartQuantity, removeFromCart, clearCart, t, placeOrder, updateOrderStatus, currentUser } = useStore();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [deliveryDetails, setDeliveryDetails] = useState({
     name: currentUser?.displayName || '',
@@ -133,8 +133,23 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
   };
 
   const [showUpiModal, setShowUpiModal] = useState(false);
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const upiId = (import.meta as any).env.VITE_UPI_ID || "merchant@upi";
   const upiName = (import.meta as any).env.VITE_UPI_NAME || "EcoShop";
+
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if ((window as any).Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
 
   const processUpiPayment = () => {
     setShowConfirmModal(false);
@@ -167,7 +182,142 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
       setShowConfirmModal(false);
       processWhatsAppOrder();
     } else if (checkoutAction === 'pay') {
-      processUpiPayment();
+      setShowConfirmModal(false);
+      setIsPaymentLoading(true);
+
+      try {
+        // Step 1: Create the local order with Pending Payment status first
+        const orderId = await placeOrder({
+          items: cart,
+          customerInfo: deliveryDetails,
+          totalAmount: total
+        }, "Pending Payment");
+
+        console.log(`Placed pending order with ID: ${orderId}`);
+
+        // Step 2: Create the checkout session on the backend, passing the order ID
+        const response = await fetch("/api/create-checkout-session", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            items: cart,
+            totalAmount: total,
+            orderId: orderId
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to create checkout session");
+        }
+
+        const data = await response.json();
+
+        if (data.id === "mock_session" || !data.key) {
+          console.log("Using UPI/QR checkout fallback.");
+          
+          // For fallback mock session, let's update status to Processing directly
+          updateOrderStatus(orderId, 'Processing');
+          
+          setPlacedOrder({
+            id: orderId,
+            date: new Date().toISOString(),
+            items: [...cart],
+            customerInfo: deliveryDetails,
+            totalAmount: total,
+            status: 'Processing'
+          });
+
+          clearCart();
+          setIsPaymentLoading(false);
+          setShowUpiModal(true);
+        } else {
+          const scriptLoaded = await loadRazorpayScript();
+          if (!scriptLoaded) {
+            console.error("Failed to load Razorpay SDK script.");
+            setIsPaymentLoading(false);
+            setShowUpiModal(true);
+            return;
+          }
+
+          const options = {
+            key: data.key,
+            amount: data.amount,
+            currency: data.currency || "INR",
+            name: "Shahnawaz Pasu Ahaar Center",
+            description: "Premium Feed & Medicine Store",
+            order_id: data.id,
+            handler: async function (razorpayResponse: any) {
+              setIsPaymentLoading(true);
+              try {
+                // Step 3: Call server verification endpoint with Razorpay credentials and orderId
+                const verifyRes = await fetch("/api/verify-payment", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json"
+                  },
+                  body: JSON.stringify({
+                    razorpay_order_id: razorpayResponse.razorpay_order_id,
+                    razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+                    razorpay_signature: razorpayResponse.razorpay_signature,
+                    orderId: orderId
+                  })
+                });
+
+                if (verifyRes.ok) {
+                  const verifyData = await verifyRes.json();
+                  console.log("Server verified payment successfully:", verifyData);
+
+                  // Step 4: Update order status to Processing on the client side
+                  updateOrderStatus(orderId, 'Processing');
+
+                  setPlacedOrder({
+                    id: orderId,
+                    date: new Date().toISOString(),
+                    items: [...cart],
+                    customerInfo: deliveryDetails,
+                    totalAmount: total,
+                    status: 'Processing'
+                  });
+
+                  clearCart();
+                  alert("Payment Successful! Your order is being processed.");
+                } else {
+                  const errData = await verifyRes.json();
+                  console.error("Payment verification failed on server:", errData);
+                  alert(`Payment completed but verification failed: ${errData.error || 'Unknown Error'}. Please contact support with order ID ${orderId}.`);
+                }
+              } catch (verifyErr) {
+                console.error("Error during payment verification:", verifyErr);
+                alert(`Error confirming payment. Please contact support with order ID ${orderId}.`);
+              } finally {
+                setIsPaymentLoading(false);
+              }
+            },
+            prefill: {
+              name: deliveryDetails.name,
+              email: deliveryDetails.email,
+              contact: deliveryDetails.phone
+            },
+            theme: {
+              color: "#2D5A27"
+            },
+            modal: {
+              ondismiss: function () {
+                setIsPaymentLoading(false);
+              }
+            }
+          };
+
+          const rzp = new (window as any).Razorpay(options);
+          rzp.open();
+        }
+      } catch (err) {
+        console.error("Error creating checkout session:", err);
+        setIsPaymentLoading(false);
+        setShowUpiModal(true);
+      }
     }
   };
 
@@ -612,6 +762,18 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
               >
                 Cancel and go back
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isPaymentLoading && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex flex-col items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col items-center max-w-xs text-center space-y-4">
+            <div className="w-12 h-12 border-4 border-[#2D5A27] border-t-transparent rounded-full animate-spin"></div>
+            <div>
+              <h3 className="font-bold text-gray-950 dark:text-slate-100 text-lg">Initializing Payment</h3>
+              <p className="text-gray-500 dark:text-slate-400 text-xs mt-1">Please wait while we connect to secure payment gateway...</p>
             </div>
           </div>
         </div>

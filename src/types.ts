@@ -29,5 +29,7 @@ export interface Order {
   customerInfo: CustomerInfo;
   totalAmount: number;
   date: string;
-  status: 'Pending Payment' | 'Processing' | 'Delivered';
+  status: 'Pending Payment' | 'Processing' | 'Shipped' | 'Delivered';
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
 }

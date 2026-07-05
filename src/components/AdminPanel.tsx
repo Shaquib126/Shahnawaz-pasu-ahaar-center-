@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../StoreContext';
 import { Category } from '../types';
-import { Plus, Trash2, ShieldCheck, X, Edit2, Package, ListChecks, CheckCircle2, Mail, RefreshCw, Camera, User, LayoutDashboard, DollarSign, ShoppingCart, Activity, AlertTriangle, Download } from 'lucide-react';
+import { Plus, Trash2, ShieldCheck, X, Edit2, Package, ListChecks, CheckCircle2, Mail, RefreshCw, Camera, User, LayoutDashboard, DollarSign, ShoppingCart, Activity, AlertTriangle, Download, Printer } from 'lucide-react';
 import { initAuth, googleSignIn, logout, getAccessToken } from '../auth';
 
 export function AdminPanel() {
   const { products, orders, addProduct, updateProduct, deleteProduct, updateOrderStatus, adminProfilePic, setAdminProfilePic, changeAdminPassword, t, language } = useStore();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'workspace' | 'settings'>('dashboard');
-  const [statusFilter, setStatusFilter] = useState<'All' | 'Pending Payment' | 'Processing' | 'Delivered'>('All');
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Pending Payment' | 'Processing' | 'Shipped' | 'Delivered'>('All');
   
   const lowStockProducts = products.filter(p => p.stock < 5);
   
@@ -40,6 +40,113 @@ export function AdminPanel() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handlePrint = (order: any) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert("Please allow popups to print.");
+      return;
+    }
+
+    const itemsHtml = order.items.map((item: any) => {
+      const prod = products.find(p => p.id === item.productId);
+      return `
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #ddd;">${prod ? prod.name : `Product ID: ${item.productId}`}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${item.quantity}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">₹${(prod?.price || 0).toLocaleString()}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold;">₹${((prod?.price || 0) * item.quantity).toLocaleString()}</td>
+        </tr>
+      `;
+    }).join('');
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Order Invoice #${order.id}</title>
+          <style>
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; margin: 40px; }
+            .header { border-bottom: 2px dashed #2D5A27; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; }
+            .title { color: #2D5A27; font-size: 24px; font-weight: bold; margin: 0; }
+            .meta-box { background: #F4F7F2; border: 1px solid #DCE4D8; padding: 15px; border-radius: 8px; font-size: 13px; }
+            .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 30px; }
+            .section-title { font-size: 11px; text-transform: uppercase; color: #888; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; }
+            th { background: #f9f9f9; text-align: left; padding: 10px; border-bottom: 2px solid #ddd; font-weight: bold; }
+            .total-table { width: 300px; margin-left: auto; font-size: 14px; }
+            .total-row { display: flex; justify-content: space-between; padding: 8px 0; }
+            .grand-total { font-size: 16px; font-weight: bold; color: #2D5A27; background: #E9F0E6; padding: 10px; border-radius: 6px; }
+            .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #777; border-top: 1px solid #eee; padding-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <h1 class="title">Shahnawaz Pasu Ahaar Center</h1>
+              <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">Premium Cattle Feed, Nutrients & Veterinary Care</p>
+            </div>
+            <div class="meta-box">
+              <strong>Order No:</strong> #${order.id}<br>
+              <strong>Date:</strong> ${new Date(order.date).toLocaleDateString()}<br>
+              <strong>Status:</strong> ${order.status}
+            </div>
+          </div>
+          
+          <div class="details-grid">
+            <div>
+              <div class="section-title">Customer Details</div>
+              <strong>${order.customerInfo.name}</strong><br>
+              Phone: ${order.customerInfo.phone}<br>
+              ${order.customerInfo.email ? `Email: ${order.customerInfo.email}<br>` : ''}
+            </div>
+            <div>
+              <div class="section-title">Delivery Address</div>
+              <p style="margin: 0; white-space: pre-wrap; font-size: 13px; line-height: 1.5;">${order.customerInfo.address}</p>
+            </div>
+          </div>
+
+          <div class="section-title">Ordered Items</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Product Description</th>
+                <th style="text-align: center; width: 80px;">Qty</th>
+                <th style="text-align: right; width: 120px;">Unit Price</th>
+                <th style="text-align: right; width: 120px;">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+
+          <div class="total-table">
+            <div class="total-row" style="color: #666; font-size: 13px;">
+              <span>Subtotal</span>
+              <span>₹${(order.totalAmount - (order.totalAmount > 50 ? 50 : 0)).toLocaleString()}</span>
+            </div>
+            <div class="total-row" style="color: #666; font-size: 13px; margin-bottom: 8px;">
+              <span>Delivery Fee</span>
+              <span>₹${order.totalAmount > 50 ? 50 : 0}</span>
+            </div>
+            <div class="total-row grand-total">
+              <span>Total Paid/Due</span>
+              <span>₹${order.totalAmount.toLocaleString()}</span>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p>Thank you for choosing Shahnawaz Pasu Ahaar Center to nourish your livestock!</p>
+            <p style="color: #999; font-size: 10px;">Generated automatically on ${new Date().toLocaleString()}</p>
+          </div>
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const filteredOrders = orders.filter(order => {
@@ -735,6 +842,7 @@ export function AdminPanel() {
                 <option value="All" className="bg-white dark:bg-slate-900">All Statuses</option>
                 <option value="Pending Payment" className="bg-white dark:bg-slate-900">Pending Payment</option>
                 <option value="Processing" className="bg-white dark:bg-slate-900">Processing</option>
+                <option value="Shipped" className="bg-white dark:bg-slate-900">Shipped</option>
                 <option value="Delivered" className="bg-white dark:bg-slate-900">Delivered</option>
               </select>
             </div>
@@ -781,6 +889,7 @@ export function AdminPanel() {
                       <td className="p-5">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
                           order.status === 'Processing' ? 'bg-[#FFFBEB] dark:bg-amber-950/40 text-[#B45309] dark:text-amber-400' :
+                          order.status === 'Shipped' ? 'bg-[#EFF6FF] dark:bg-blue-950/40 text-[#1D4ED8] dark:text-blue-400' :
                           order.status === 'Delivered' ? 'bg-[#ECFDF5] dark:bg-emerald-950/40 text-[#047857] dark:text-emerald-450' :
                           'bg-[#F3F4F6] dark:bg-slate-800 text-[#374151] dark:text-slate-305'
                         }`}>
@@ -788,14 +897,33 @@ export function AdminPanel() {
                         </span>
                       </td>
                       <td className="p-5 text-right whitespace-nowrap">
-                        {order.status === 'Processing' && (
-                          <button 
-                            onClick={() => updateOrderStatus(order.id, 'Delivered')}
-                            className="bg-[#2D5A27] hover:bg-[#23471E] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm"
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handlePrint(order)}
+                            className="p-1.5 bg-gray-50 dark:bg-slate-950 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-gray-500 hover:text-gray-800 dark:hover:text-slate-200 transition-all border border-gray-150 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700 flex items-center justify-center shadow-sm"
+                            title="Print Invoice / Summary"
                           >
-                            {t('mark_delivered' as any)}
+                            <Printer className="w-4 h-4" />
                           </button>
-                        )}
+                          {order.status === 'Processing' && (
+                            <button 
+                              onClick={() => updateOrderStatus(order.id, 'Shipped')}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
+                              id={`btn-ship-${order.id}`}
+                            >
+                              Mark Shipped
+                            </button>
+                          )}
+                          {order.status === 'Shipped' && (
+                            <button 
+                              onClick={() => updateOrderStatus(order.id, 'Delivered')}
+                              className="bg-[#2D5A27] hover:bg-[#23471E] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
+                              id={`btn-deliver-${order.id}`}
+                            >
+                              {t('mark_delivered' as any)}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
