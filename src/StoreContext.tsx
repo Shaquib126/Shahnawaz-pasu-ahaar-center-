@@ -33,6 +33,8 @@ interface StoreContextType {
   cancelOrder: (orderId: string) => Promise<boolean>;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
+  authError: { code: string; message: string; domain?: string } | null;
+  setAuthError: (error: { code: string; message: string; domain?: string } | null) => void;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -41,6 +43,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     return (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
   });
+
+  const [authError, setAuthError] = useState<{ code: string; message: string; domain?: string } | null>(null);
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -173,9 +177,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const loginCustomer = async () => {
     try {
+      setAuthError(null);
       await googleSignIn(false);
     } catch (err: any) {
-      alert("Failed to initiate login with Google: " + err.message);
+      console.error("Login customer error caught in context:", err);
+      setAuthError({
+        code: err.code || 'unknown',
+        message: err.message || String(err),
+        domain: window.location.hostname
+      });
     }
   };
 
@@ -386,7 +396,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addToCart, removeFromCart, updateCartQuantity, clearCart,
       addProduct, updateProduct, deleteProduct,
       placeOrder, updateOrderStatus, cancelOrder,
-      theme, toggleTheme
+      theme, toggleTheme,
+      authError, setAuthError
     }}>
       {children}
     </StoreContext.Provider>

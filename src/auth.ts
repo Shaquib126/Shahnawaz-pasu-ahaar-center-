@@ -2,13 +2,15 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, signInWithRedirect, GoogleAuthProvider, onAuthStateChanged, User, getRedirectResult } from 'firebase/auth';
 import defaultFirebaseConfig from '../firebase-applet-config.json';
 
+const metaEnv = (import.meta as any).env || {};
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || defaultFirebaseConfig.apiKey,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || defaultFirebaseConfig.authDomain,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || defaultFirebaseConfig.projectId,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || defaultFirebaseConfig.storageBucket,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || defaultFirebaseConfig.messagingSenderId,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || defaultFirebaseConfig.appId,
+  apiKey: metaEnv.VITE_FIREBASE_API_KEY || defaultFirebaseConfig.apiKey,
+  authDomain: metaEnv.VITE_FIREBASE_AUTH_DOMAIN || defaultFirebaseConfig.authDomain,
+  projectId: metaEnv.VITE_FIREBASE_PROJECT_ID || defaultFirebaseConfig.projectId,
+  storageBucket: metaEnv.VITE_FIREBASE_STORAGE_BUCKET || defaultFirebaseConfig.storageBucket,
+  messagingSenderId: metaEnv.VITE_FIREBASE_MESSAGING_SENDER_ID || defaultFirebaseConfig.messagingSenderId,
+  appId: metaEnv.VITE_FIREBASE_APP_ID || defaultFirebaseConfig.appId,
 };
 
 const app = initializeApp(firebaseConfig);
@@ -71,12 +73,7 @@ export const googleSignIn = async (isAdmin: boolean = false): Promise<void> => {
     }
     isSigningIn = false;
   } catch (error: any) {
-    console.error('Sign in error:', error);
-    if (error.code === 'auth/unauthorized-domain' || error.code?.includes('api-key-not-valid')) {
-      alert(`Sign in failed: ${error.code}\n\nFIX FOR NETLIFY:\nYou need to add your Firebase config to Netlify Environment Variables.\n\nTo fix:\n1. Go to Netlify -> Site Settings -> Environment variables.\n2. Add VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, etc., from your Firebase project.\n3. IMPORTANT: Go to Deploys -> Trigger deploy -> Clear cache and deploy site.`);
-    } else {
-      alert('Sign in failed: ' + error.message);
-    }
+    console.error('Sign in error in googleSignIn:', error);
     isSigningIn = false;
     throw error;
   }

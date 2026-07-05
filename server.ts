@@ -119,6 +119,21 @@ async function startServer() {
     }
   });
 
+  // Get a single order by public ID
+  app.get("/api/orders/:id", async (req, res) => {
+    if (!process.env.MONGODB_URI) return res.status(400).json({ error: "DB not connected" });
+    try {
+      const orderId = req.params.id.trim().toUpperCase();
+      const order = await Order.findOne({ id: orderId }).lean();
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+      res.json(order);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Create an order
   app.post("/api/orders", async (req, res) => {
     if (!process.env.MONGODB_URI) return res.status(400).json({ error: "DB not connected" });

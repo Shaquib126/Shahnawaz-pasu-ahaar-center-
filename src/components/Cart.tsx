@@ -210,7 +210,19 @@ export function Cart({ setView }: { setView: (v: any) => void }) {
             </div>
           </div>
 
-          <div className="flex gap-2 w-full sm:w-auto">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => {
+                localStorage.setItem('lastPlacedOrderId', placedOrder.id);
+                setPlacedOrder(null);
+                setView('track-order');
+              }}
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all shadow-sm"
+              id="btn-track-order-direct"
+            >
+              <MapPin className="w-5 h-5 text-white" />
+              <span>Track Delivery</span>
+            </button>
             <button
               onClick={() => window.print()}
               className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-[#DCE4D8] hover:bg-[#F4F7F2] text-gray-700 rounded-xl font-bold transition-all shadow-sm"

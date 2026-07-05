@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../StoreContext';
-import { ShoppingCart, LogIn, LogOut, Settings, Leaf, User, ShoppingBag, Sun, Moon } from 'lucide-react';
+import { ShoppingCart, LogIn, LogOut, Settings, Leaf, User, ShoppingBag, Sun, Moon, MapPin } from 'lucide-react';
 
 export function Header({ view, setView }: { view: string, setView: (v: any) => void }) {
   const { cart, language, setLanguage, t, isAdmin, logoutAdmin, currentUser, loginCustomer, logoutCustomer, adminProfilePic, theme, toggleTheme } = useStore();
@@ -47,6 +47,18 @@ export function Header({ view, setView }: { view: string, setView: (v: any) => v
                   {cartCount}
                 </span>
               )}
+            </button>
+
+            <button
+              onClick={() => setView('track-order')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#447A3C] hover:opacity-100 transition-colors ${
+                view === 'track-order' ? 'bg-[#558B4D] border border-white/20' : 'border border-transparent'
+              }`}
+              title={language === 'hi' ? 'ऑर्डर ट्रैक करें' : 'Track Order'}
+            >
+              <MapPin className="h-4 w-4" />
+              <span className="hidden sm:inline">{language === 'hi' ? 'ऑर्डर ट्रैक करें' : 'Track Order'}</span>
+              <span className="sm:hidden">{language === 'hi' ? 'ट्रैक' : 'Track'}</span>
             </button>
 
             {currentUser ? (

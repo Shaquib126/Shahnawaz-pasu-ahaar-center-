@@ -41,7 +41,12 @@ export const translations = {
     mark_delivered: "Mark Delivered",
     customer: "Customer",
     search_placeholder: "Search by name or description...",
-    no_results_found: "No products match your search query."
+    no_results_found: "No products match your search query.",
+    track_order: "Track Order",
+    track_order_desc: "Enter your 7-character Order ID to view current delivery status and order details.",
+    order_id: "Order ID",
+    track_now: "Track Now",
+    order_not_found: "Order not found. Please verify the ID."
   },
   hi: {
     shop_title: "शाहनवाज़ पशु आहार केंद्र",
@@ -85,7 +90,12 @@ export const translations = {
     mark_delivered: "वितरित चिह्नित करें",
     customer: "ग्राहक",
     search_placeholder: "नाम या विवरण खोजें...",
-    no_results_found: "आपकी खोज से मेल खाने वाला कोई उत्पाद नहीं मिला।"
+    no_results_found: "आपकी खोज से मेल खाने वाला कोई उत्पाद नहीं मिला।",
+    track_order: "ऑर्डर ट्रैक करें",
+    track_order_desc: "वर्तमान वितरण स्थिति और ऑर्डर विवरण देखने के लिए अपना 7-अक्षरों का ऑर्डर आईडी दर्ज करें।",
+    order_id: "ऑर्डर आईडी",
+    track_now: "अभी ट्रैक करें",
+    order_not_found: "ऑर्डर नहीं मिला। कृपया आईडी की जांच करें।"
   }
 };
 

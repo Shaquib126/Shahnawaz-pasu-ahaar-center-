@@ -7,8 +7,10 @@ import { AdminPanel } from './components/AdminPanel';
 import { Login } from './components/Login';
 import { CookieConsent } from './components/CookieConsent';
 import { MyOrders } from './components/MyOrders';
+import { AuthErrorModal } from './components/AuthErrorModal';
+import { TrackOrder } from './components/TrackOrder';
 
-type View = 'shop' | 'cart' | 'admin' | 'login' | 'my-orders';
+type View = 'shop' | 'cart' | 'admin' | 'login' | 'my-orders' | 'track-order';
 
 function MainApp() {
   const [view, setView] = useState<View>('shop');
@@ -42,8 +44,10 @@ function MainApp() {
         {view === 'admin' && !isAdmin && <Login setView={setView} />}
         {view === 'login' && <Login setView={setView} />}
         {view === 'my-orders' && <MyOrders setView={setView} />}
+        {view === 'track-order' && <TrackOrder setView={setView} />}
       </main>
       <CookieConsent />
+      <AuthErrorModal />
     </div>
   );
 }
